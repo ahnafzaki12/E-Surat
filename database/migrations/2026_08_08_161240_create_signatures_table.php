@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('signatures', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->string('image_path');
+            $table->json('image_path');
             $table->enum('type', ['gambar', 'qr_only', 'sertifikat_elektronik']);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

@@ -121,8 +121,8 @@ jenis_surats (1) ──── (N) nomor_surats [via jenis_surat_id]
 | perihal | string | |
 | tujuan_surat | text | Kepada siapa surat ditujukan |
 | tanggal_surat | date | |
-| file_draft | string (path) | PDF asli dari sekretaris |
-| file_final | string (path), nullable | PDF setelah dibubuhi TTD + QR |
+| file_draft | json | Menyimpan path & nama file asli draft PDF |
+| file_final | json, nullable | Menyimpan path & nama file asli PDF final |
 | status | enum | draft / menunggu_persetujuan / ditolak / disetujui |
 | catatan_penolakan | text, nullable | |
 | created_by | FK → users | Sekretaris pengunggah |
@@ -145,7 +145,7 @@ jenis_surats (1) ──── (N) nomor_surats [via jenis_surat_id]
 |---|---|---|
 | id | PK | |
 | user_id | FK → users | Pemilik tanda tangan (approver) |
-| image_path | string | File gambar TTD |
+| image_path | json | Menyimpan path & nama file asli gambar TTD |
 | type | enum | gambar / qr_only / sertifikat_elektronik (future) |
 | is_active | boolean | TTD aktif yang dipakai saat ini |
 | created_at | timestamp | |

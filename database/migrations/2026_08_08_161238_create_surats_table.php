@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('perihal');
             $table->text('tujuan_surat');
             $table->date('tanggal_surat');
-            $table->string('file_draft');
-            $table->string('file_final')->nullable();
+            $table->json('file_draft');
+            $table->json('file_final')->nullable();
             $table->enum('status', ['draft', 'menunggu_persetujuan', 'ditolak', 'disetujui'])->default('draft');
             $table->text('catatan_penolakan')->nullable();
             $table->foreignId('created_by')->constrained('users');

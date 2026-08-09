@@ -21,6 +21,9 @@ return new class extends Migration
             $table->date('tanggal_surat');
             $table->json('file_draft');
             $table->json('file_final')->nullable();
+            $table->json('qr_position')->nullable();
+            $table->string('verification_token')->nullable()->unique();
+            $table->string('file_hash')->nullable();
             $table->enum('status', ['draft', 'menunggu_persetujuan', 'ditolak', 'disetujui'])->default('draft');
             $table->text('catatan_penolakan')->nullable();
             $table->foreignId('created_by')->constrained('users');

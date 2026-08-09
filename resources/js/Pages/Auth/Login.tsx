@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Input from '../../components/Forms/Input';
 import Label from '../../components/Forms/Label';
@@ -6,15 +7,17 @@ import Checkbox from '../../components/Forms/Checkbox';
 import Button from '../../components/UI/Button';
 
 export default function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    const { data, setData, post, processing, errors } = useForm({
+        email: '',
+        password: '',
+        remember: false,
+    });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Nanti bisa diintegrasikan dengan Inertia.js (useForm) atau Axios
-        console.log({ email, password, rememberMe });
+        post(route('login.post'));
     };
 
     const togglePasswordVisibility = (
@@ -44,38 +47,44 @@ export default function Login() {
                     <Input
                         id="email"
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
                         required
                         placeholder="nama@email.com"
                     />
+                    {errors.email && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                    )}
                 </div>
 
                 <div>
                     <Label htmlFor="password" value="Password" />
                     <Input
                         id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        type={showPassword ? 'text' : 'password'}
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
                         required
                         placeholder="••••••••"
                         rightElement={togglePasswordVisibility}
                     />
+                    {errors.password && (
+                        <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
                         <Checkbox
                             id="remember-me"
-                            checked={rememberMe}
-                            onChange={(e) => setRememberMe(e.target.checked)}
+                            checked={data.remember}
+                            onChange={(e) => setData('remember', e.target.checked)}
                         />
                         <Label htmlFor="remember-me" className="ml-2 !mb-0 cursor-pointer">
                             Ingat Saya
                         </Label>
                     </div>
-                    
+
                     <div className="text-sm">
                         <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
                             Lupa password?
@@ -83,10 +92,11 @@ export default function Login() {
                     </div>
                 </div>
 
-                <Button type="submit">
-                    Masuk
+                <Button type="submit" disabled={processing}>
+                    {processing ? 'Memproses...' : 'Masuk'}
                 </Button>
             </form>
         </AuthLayout>
     );
 }
+

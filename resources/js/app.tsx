@@ -1,6 +1,11 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
+import { route, Config } from 'ziggy-js';
+
+// Make route() available globally — use window.Ziggy injected by @routes (has correct port)
+(window as any).route = (name: string, params?: any, absolute?: boolean) =>
+    route(name, params, absolute, (window as any).Ziggy as Config);
 
 createInertiaApp({
     resolve: (name: string) => {

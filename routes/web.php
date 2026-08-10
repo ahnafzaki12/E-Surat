@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Sekretaris\SuratController;
 use Illuminate\Support\Facades\Route;
 
 // Route untuk halaman login (hanya bisa diakses oleh tamu/guest)
@@ -18,3 +19,26 @@ Route::middleware('auth')->group(function () {
         return Inertia\Inertia::render('Dashboard'); // Nantinya bisa diganti menjadi halaman dashboard Inertia
     })->name('dashboard');
 });
+
+// ── Sekretaris ──────────────────────────────────────────────────────────────
+Route::middleware(['auth', 'role:sekretaris'])
+    ->prefix('sekretaris')
+    ->name('sekretaris.')
+    ->group(function () {
+        // Resource surat: index, create, store, show
+        Route::resource('surat', SuratController::class)
+            ->only(['index', 'create', 'store', 'show']);
+
+        // Preview PDF draft (stream file, protected)
+        Route::get('surat/{surat}/preview', [SuratController::class, 'previewFile'])
+            ->name('surat.preview');
+
+        // Placement Editor Save
+        Route::put('surat/{surat}/placement', [SuratController::class, 'updatePlacement'])
+            ->name('surat.placement.update');
+
+        // Ajukan surat ke approver
+        Route::post('surat/{surat}/submit', [SuratController::class, 'submit'])
+            ->name('surat.submit');
+    });
+

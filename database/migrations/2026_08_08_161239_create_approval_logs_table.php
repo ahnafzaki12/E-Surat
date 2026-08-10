@@ -17,7 +17,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->enum('aksi', ['diajukan', 'disetujui', 'ditolak']);
             $table->text('catatan')->nullable();
-            $table->timestamps();
+            // Audit log bersifat immutable — hanya created_at sesuai ERD PRD V1.1
+            $table->timestamp('created_at')->nullable();
         });
     }
 

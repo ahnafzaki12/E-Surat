@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('jenis_surat_id')->constrained('jenis_surats');
             $table->integer('tahun');
-            $table->integer('last_number');
-            $table->timestamps();
+            $table->integer('last_number')->default(0);
+            $table->timestamp('updated_at')->nullable();
             
             $table->unique(['jenis_surat_id', 'tahun']);
         });

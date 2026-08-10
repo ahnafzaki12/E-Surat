@@ -203,9 +203,9 @@ UNIQUE (jenis_surat_id, tahun)
 
 ---
 
-# 5.6 Struktur `qr_position`
+# 5.6 Struktur `qr_position` (TTE Badge)
 
-Field `qr_position` menyimpan posisi QR Code menggunakan koordinat relatif terhadap ukuran halaman PDF.
+Field `qr_position` menyimpan posisi area **TTE Badge** (kartu tanda tangan elektronik yang berisi QR code dan teks metadata) menggunakan koordinat relatif terhadap ukuran halaman PDF dengan titik acuan awal **kiri-atas (top-left)**.
 
 Contoh:
 
@@ -214,8 +214,8 @@ Contoh:
     "page": 1,
     "x": 0.72,
     "y": 0.78,
-    "width": 0.12,
-    "height": 0.12
+    "width": 0.26,
+    "height": 0.10
 }
 ```
 
@@ -223,21 +223,13 @@ Keterangan:
 
 | Field | Keterangan |
 |---|---|
-| `page` | Nomor halaman PDF |
-| `x` | Posisi horizontal relatif, 0–1 |
-| `y` | Posisi vertikal relatif, 0–1 |
-| `width` | Lebar QR relatif terhadap halaman |
-| `height` | Tinggi QR relatif terhadap halaman |
+| `page` | Nomor halaman PDF (1-based index) |
+| `x` | Posisi horizontal relatif (0–1), dihitung dari tepi kiri halaman |
+| `y` | Posisi vertikal relatif (0–1), dihitung dari tepi atas halaman |
+| `width` | Lebar kartu TTE relatif terhadap lebar halaman |
+| `height` | Tinggi kartu TTE relatif terhadap tinggi halaman (dikunci secara proporsional sesuai rasio aspek kartu) |
 
-Contoh:
-
-```text
-x = 0.72
-```
-
-berarti posisi QR berada sekitar 72% dari lebar halaman.
-
-Pendekatan ini dipilih agar posisi QR tidak bergantung pada ukuran pixel layar atau resolusi PDF viewer.
+*Catatan*: Rasio aspek kartu TTE dikunci secara proporsional (misalnya 2.6:1) pada UI Editor. Pendekatan koordinat relatif dan titik awal kiri-atas dipilih untuk mempermudah integrasi editor visual berbasis web (React) dengan backend generator PDF.
 
 ---
 
@@ -328,42 +320,42 @@ Sekretaris dapat melihat preview PDF sebelum mengajukan surat.
 
 ### FR-11
 
-Sistem menyediakan PDF Placement Editor untuk menentukan posisi QR Code.
+Sistem menyediakan PDF Placement Editor berbasis visual (React + React PDF) untuk menentukan posisi TTE Badge.
 
 ### FR-12
 
-Sekretaris dapat memilih halaman PDF tempat QR Code akan ditempatkan.
+Sekretaris dapat memilih halaman PDF tempat TTE Badge akan ditempatkan.
 
 ### FR-13
 
-Sekretaris dapat melakukan:
-
-- drag QR Code
-- mengubah ukuran QR Code
-- memindahkan QR Code
-- melihat preview posisi QR Code
+Sekretaris dapat melakukan interaksi drag-and-drop dan resize pada spesimen/skeleton TTE Badge di atas kanvas PDF.
 
 ### FR-14
 
-QR Code direpresentasikan sebagai satu objek:
+TTE Badge direpresentasikan sebagai kartu spesimen persegi panjang (dengan rasio aspek tetap terkunci, misalnya 2.6:1):
 
 ```text
-┌─────────────┐
-│             │
-│     QR      │
-│             │
-└─────────────┘
+┌─────────────────────────────────┐
+│  ┌───────┐  TTE Oleh: [Nama]    │
+│  │  QR   │  [Tanggal & Waktu]   │
+│  │ CODE  │                      │
+│  └───────┘  [URL Verifikasi]    │
+└─────────────────────────────────┘
 ```
 
-Tidak terdapat objek gambar tanda tangan dalam editor.
+Tidak terdapat objek pemindaian gambar tanda tangan basah dalam editor. Yang ditempatkan adalah spesimen representasi TTE Badge kartu di atas.
 
 ### FR-15
 
-Posisi QR Code disimpan menggunakan koordinat relatif terhadap ukuran halaman PDF.
+Posisi TTE Badge dihitung dari sudut **kiri-atas (top-left)** halaman PDF dan disimpan menggunakan koordinat relatif (nilai 0–1) terhadap ukuran lebar dan tinggi halaman PDF.
+
+### FR-15-A
+
+Editor UI wajib melakukan *locking aspect ratio* pada elemen spesimen TTE Badge saat proses resize untuk menghindari distorsi/stretch gambar.
 
 ### FR-16
 
-Sistem dapat menyediakan posisi QR Code default berdasarkan `jenis_surat`.
+Sistem dapat menyediakan posisi default TTE Badge berdasarkan `jenis_surat`.
 
 ### FR-17
 
@@ -371,7 +363,7 @@ Sekretaris dapat mengubah posisi default tersebut sebelum surat diajukan.
 
 ### FR-18
 
-Setelah surat diajukan untuk approval, konfigurasi posisi QR tidak dapat diubah tanpa membuat atau mengunggah revisi.
+Setelah surat diajukan untuk approval, konfigurasi posisi TTE Badge tidak dapat diubah tanpa membuat atau mengunggah revisi.
 
 ---
 
@@ -411,17 +403,19 @@ Saat approval:
 2. Sistem menghasilkan nomor surat.
 3. Sistem membuat verification token unik.
 4. Sistem membuat QR Code berdasarkan verification token.
-5. Sistem mengambil konfigurasi posisi QR.
-6. Sistem membubuhkan QR Code ke PDF.
-7. Sistem menghitung SHA-256 PDF final.
-8. Sistem menyimpan PDF sebagai `file_final`.
-9. Sistem menyimpan hash sebagai `file_hash`.
-10. Sistem mengubah status menjadi `disetujui`.
-11. Sistem mengisi `approved_by`.
-12. Sistem mengisi `approved_at`.
-13. Sistem mencatat approval ke `approval_logs`.
+5. Sistem men-generate gambar TTE Badge (PNG) secara dinamis menggunakan template SVG/HTML yang berisi QR Code dan metadata teks (Nama Approver, Tanggal & Waktu Approval, dan URL Verifikasi).
+6. Sistem mengambil konfigurasi posisi dari `qr_position`.
+7. Sistem mengonversi koordinat relatif top-left dari database ke koordinat absolut PDF (bottom-left) sesuai ukuran halaman PDF yang bersangkutan.
+8. Sistem membubuhkan gambar TTE Badge tersebut ke dokumen PDF.
+9. Sistem menghitung SHA-256 PDF final.
+10. Sistem menyimpan PDF sebagai `file_final`.
+11. Sistem menyimpan hash sebagai `file_hash`.
+12. Sistem mengubah status menjadi `disetujui`.
+13. Sistem mengisi `approved_by`.
+14. Sistem mengisi `approved_at`.
+15. Sistem mencatat approval ke `approval_logs`.
 
-**Tidak ada proses pembubuhan gambar tanda tangan atau tanda tangan elektronik lain ke PDF.**
+**Tidak ada proses pembubuhan scan tanda tangan basah atau tanda tangan elektronik berbasis sertifikat pihak ketiga ke PDF.**
 
 ---
 
@@ -443,13 +437,13 @@ https://esurat.pissya.or.id/verify/8f72a91c3b
 
 ### FR-25
 
-QR Code yang dibubuhkan ke PDF berfungsi sebagai identitas/tautan untuk melakukan verifikasi surat pada sistem.
+QR Code dan metadata teks di dalam TTE Badge yang dibubuhkan ke PDF berfungsi sebagai identitas/tautan untuk melakukan verifikasi surat pada sistem.
 
 ### FR-26
 
-Sistem **tidak membubuhkan gambar tanda tangan** ke PDF.
+Sistem **tidak membubuhkan scan gambar tanda tangan basah** ke PDF. Sebagai gantinya, sistem membubuhkan kartu TTE Badge dinamis.
 
-PDF final tidak memiliki gambar TTD.
+PDF final memiliki gambar kartu TTE Badge tersemat di halaman terpilih.
 
 ### FR-27
 
@@ -457,23 +451,31 @@ Sistem **tidak mengklaim QR Code sebagai tanda tangan elektronik tersertifikasi*
 
 ### FR-28
 
-Informasi approver ditampilkan pada halaman verifikasi berdasarkan data approval.
-
-Contoh:
+Informasi validasi dan detail dokumen ditampilkan secara terstruktur pada halaman verifikasi publik dengan layout menyerupai spesimen berikut:
 
 ```text
-Status       : VALID
-Nomor Surat  : A.2-59/YA-PISSYA/VIII/2026
-Jenis Surat  : Surat Undangan
-
-Disetujui oleh:
-Mohamad Irwan Afandi
-
-Jabatan:
-Ketua Yayasan
-
-Tanggal Approval:
-09 Agustus 2026
+┌────────────────────────────────────────────────────────┐
+│  [Logo Yayasan]                                        │
+├────────────────────────────────────────────────────────┤
+│                  VERIFIKASI DOKUMEN                    │
+│                                                        │
+│                         ( ✓ )                          │
+│                                                        │
+│  Status Dokumen     Nomor Surat         Satuan Kerja   │
+│     [AKTIF]         [No. Surat]        [Nama Yayasan]  │
+│                                                        │
+│  Keterangan (Perihal)                                  │
+│  [Perihal Surat ...]                                   │
+│                                                        │
+│  Penandatangan                         Waktu TTD       │
+│  [Nama Pejabat/Approver]          [Tgl & Jam Approval] │
+│                                                        │
+│                        Dokumen                         │
+│                      [ Download ]                      │
+│                                                        │
+├────────────────────────────────────────────────────────┤
+│ Catatan kaki TTE & Hak Cipta                           │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -482,21 +484,23 @@ Tanggal Approval:
 
 ### FR-29
 
-Halaman verifikasi dapat diakses tanpa login.
+Halaman verifikasi dapat diakses tanpa login (publik) melalui URL dari QR Code.
 
 ### FR-30
 
-Halaman verifikasi menampilkan minimal:
+Halaman verifikasi harus memiliki elemen UI/UX berikut sesuai contoh layout referensi:
 
-- status dokumen
-- nomor surat
-- jenis surat
-- perihal
-- tanggal surat
-- nama approver
-- waktu approval
-- informasi yayasan
-- tombol download PDF final
+1. **Header**: Menampilkan logo Yayasan dan judul halaman "VERIFIKASI DOKUMEN".
+2. **Ikon Status Utama**: Lambang centang hijau (check-mark) besar di bagian tengah untuk indikasi instan dokumen valid.
+3. **Detail Grid**:
+   * **Status dokumen**: Menampilkan label "AKTIF" dengan visualisasi warna hijau terang.
+   * **Nomor Surat**: Nomor lengkap surat yang sah.
+   * **Satuan Kerja**: Nama unit kerja atau organisasi (Yayasan/Lembaga).
+   * **Keterangan**: Menampilkan perihal/tujuan surat.
+   * **Penandatangan**: Nama lengkap pejabat penandatangan beserta gelar dan NIP/Identitas.
+   * **Waktu Penandatangan**: Tanggal dan jam lengkap saat persetujuan dilakukan disertai ikon kalender & jam.
+4. **Unduh Dokumen**: Tombol "Download" berwarna hijau untuk mengunduh berkas PDF final yang terverifikasi langsung dari storage.
+5. **Catatan Kaki (Footer Note)**: Teks penjelasan penandatanganan elektronik dan hak cipta sistem di bagian bawah halaman.
 
 ### FR-31
 
@@ -504,18 +508,10 @@ Sistem melakukan pemeriksaan integritas PDF berdasarkan SHA-256 apabila file dip
 
 ### FR-32
 
-Jika verification token tidak ditemukan:
+Jika verification token tidak ditemukan atau tidak valid, sistem menampilkan halaman error terstruktur:
 
 ```text
-Dokumen tidak ditemukan.
-```
-
-### FR-33
-
-Jika surat tidak valid:
-
-```text
-Dokumen tidak valid.
+Dokumen tidak ditemukan atau tidak valid.
 ```
 
 ---

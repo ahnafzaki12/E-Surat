@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../compon
 import Badge from '../../components/ui/badge/Badge';
 import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
-import { ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal, Plus, Search, Paperclip } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal, Plus, Search } from 'lucide-react';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Rnd } from 'react-rnd';
 
@@ -15,6 +15,7 @@ import SpecimenQR from '../../components/common/SpecimenQR';
 import { StatusBadge, statusConfiguration as STATUS_MAPPING } from '../../components/surat/StatusBadge';
 import { useSuratFilters, type SuratSortKey } from '../../Hooks/useSuratFilters';
 import type { Surat as SuratDetail, SuratStatus } from '../../Types/surat';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 // Set worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -45,10 +46,13 @@ interface Surat {
     approved_at: string | null;
     status: 'draft' | 'menunggu_persetujuan' | 'ditolak' | 'disetujui';
     jenis_surat: JenisSurat | null;
+    jenisSurat?: JenisSurat | null;
     created_by: number;
     created_by_relation?: User | null;
     approved_by?: number | null;
     approved_by_relation?: User | null;
+    verification_token?: string | null;
+    file_final?: { path?: string; original_name?: string; size?: number; mime?: string } | null;
     created_by_user?: User | null;
     created_by_email?: string;
     created_by_name?: string;
@@ -355,6 +359,7 @@ export default function SuratIndex() {
 
     // Approver states
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showApproveConfirm, setShowApproveConfirm] = useState(false);
     const [rejectNote, setRejectNote] = useState('');
     const [isApproving, setIsApproving] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
@@ -383,7 +388,9 @@ export default function SuratIndex() {
     });
 
     const isApprover = user?.role?.name?.toLowerCase() === 'approver' || user?.role_id === 2;
-    const canSubmit = activeLetter ? (activeLetter.status === 'draft' || activeLetter.status === 'ditolak') : false;
+    const canSubmit = activeLetter
+        ? !isApprover && (activeLetter.status === 'draft' || activeLetter.status === 'ditolak')
+        : false;
     const isWaiting = activeLetter ? activeLetter.status === 'menunggu_persetujuan' : false;
 
     const updateBadgePixels = useCallback((dispW: number, dispH: number, x: number, y: number, w: number, h: number) => {
@@ -527,15 +534,6 @@ export default function SuratIndex() {
         );
     };
 
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join('')
-            .toUpperCase();
-    };
-
     return (
         <AuthenticatedLayout>
             <PageMeta title={activeLetter ? `${activeLetter.perihal || 'Detail Surat'} | E-Surat` : "Daftar Surat | E-Surat"} description="Daftar Surat Keluar dan Masuk Yayasan PISSYA" />
@@ -592,11 +590,22 @@ export default function SuratIndex() {
 
                             {/* Actions */}
                             <div className="flex items-center gap-2">
+                                {activeLetter.status === 'disetujui' && activeLetter.verification_token && (
+                                    <a
+                                        href={route('surat.verify.download', activeLetter.verification_token)}
+                                        className="flex items-center gap-2 px-4 py-1.5 text-[15px] font-semibold text-white bg-emerald-600 rounded-full hover:bg-emerald-500 transition-all"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                                        </svg>
+                                        Download PDF Final
+                                    </a>
+                                )}
                                 {canSubmit && (
                                     <button
                                         onClick={handleSavePlacement}
                                         disabled={isSavingPlacement || renderedWidth === 0}
-                                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-705 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl shadow-sm transition disabled:opacity-50"
+                                        className="flex items-center gap-2 px-4 py-1.5 text-[15px] font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-700 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                                     >
                                         <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9" />
@@ -614,8 +623,7 @@ export default function SuratIndex() {
                                             setShowConfirm(true);
                                         }}
                                         disabled={!activeLetter.qr_position}
-                                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-md transition ${!activeLetter.qr_position ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'}`}
-                                        style={activeLetter.qr_position ? { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' } : { background: '#9ca3af' }}
+                                        className={`flex items-center gap-2 px-4 py-1.5 text-[15px] font-semibold text-white bg-blue-600 rounded-full transition-all ${!activeLetter.qr_position ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}
                                     >
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
@@ -624,41 +632,30 @@ export default function SuratIndex() {
                                     </button>
                                 )}
                                 {isApprover && isWaiting && (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => setShowRejectModal(true)}
                                             disabled={isApproving || isRejecting}
-                                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition disabled:opacity-50"
+                                            className="px-4 py-1.5 text-[15px] font-semibold text-gray-800 bg-white border-2 border-gray-100 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
                                         >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
                                             Tolak
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                if (!confirm('Apakah Anda yakin ingin menyetujui surat ini?')) return;
-                                                setIsApproving(true);
-                                                router.post(
-                                                    route('surat.approve', activeLetter.id),
-                                                    {},
-                                                    { onFinish: () => setIsApproving(false) }
-                                                );
-                                            }}
+                                            onClick={() => setShowApproveConfirm(true)}
                                             disabled={isApproving || isRejecting}
-                                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-md transition disabled:opacity-50"
+                                            className="relative px-4 py-1.5 text-[15px] font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-500 transition-all disabled:opacity-50"
                                         >
                                             {isApproving ? (
-                                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
-                                                </svg>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                    </svg>
+                                                    Memproses...
+                                                </div>
                                             ) : (
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                </svg>
+                                                "Setujui"
                                             )}
-                                            Setujui
                                         </button>
                                     </div>
                                 )}
@@ -856,7 +853,7 @@ export default function SuratIndex() {
                                         </Document>
 
                                         {/* Drag and Drop Signature Area */}
-                                        {renderedWidth > 0 && renderedHeight > 0 && Number(pageNumber) === Number(qrPosition.page) && (
+                                        {activeLetter.status !== 'disetujui' && renderedWidth > 0 && renderedHeight > 0 && Number(pageNumber) === Number(qrPosition.page) && (
                                             <Rnd
                                                 size={{ width: badgeState.width, height: badgeState.height }}
                                                 position={{ x: badgeState.x, y: badgeState.y }}
@@ -1021,26 +1018,6 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => toggleSort('approved_at')}
-                                        >
-                                            <div className="flex items-center">
-                                                Tanggal Approval
-                                                {getSortIcon('approved_at')}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell
-                                            isHeader
-                                            className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => toggleSort('status')}
-                                        >
-                                            <div className="flex items-center">
-                                                Kategori
-                                                {getSortIcon('status')}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell
-                                            isHeader
-                                            className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
                                             onClick={() => toggleSort('jenis_surat')}
                                         >
                                             <div className="flex items-center">
@@ -1050,25 +1027,9 @@ export default function SuratIndex() {
                                         </TableCell>
                                         <TableCell
                                             isHeader
-                                            className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => toggleSort('tujuan_surat')}
-                                        >
-                                            <div className="flex items-center">
-                                                Tujuan / Lembaga
-                                                {getSortIcon('tujuan_surat')}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell
-                                            isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400"
                                         >
                                             Status
-                                        </TableCell>
-                                        <TableCell
-                                            isHeader
-                                            className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                                        >
-                                            Petugas
                                         </TableCell>
                                     </TableRow>
                                 </TableHeader>
@@ -1077,28 +1038,11 @@ export default function SuratIndex() {
                                         filteredSurats.map((surat) => {
                                             // Retrieve dynamic values based on E-Surat structure
                                             const creator = surat.creator || surat.created_by_relation || surat.created_by_user || (user?.id === surat.created_by ? user : null);
-                                            const approver = surat.approver || surat.approved_by_relation;
-
+                                            const jenisSurat = surat.jenis_surat || surat.jenis_surat;
                                             const dateStart = new Date(surat.tanggal_surat);
-                                            const dateUploaded = new Date(surat.created_at);
-                                            const dateApproved = surat.approved_at ? new Date(surat.approved_at) : null;
 
-                                            // Format start date / schedule (e.g. 13 Aug 2026 10:00)
+                                            // Format tanggal surat
                                             const formattedStartDay = dateStart.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-                                            const formattedStartTime = dateUploaded.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-
-                                            // Format deadline / approval
-                                            const formattedEndDay = dateApproved
-                                                ? dateApproved.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
-                                                : "Belum";
-                                            const formattedEndTime = dateApproved
-                                                ? dateApproved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-                                                : "Disetujui";
-
-                                            // Priority badge mapping: Surat Masuk / Surat Keluar
-                                            const isMasuk = surat.jenis_surat?.kategori?.toLowerCase() === 'surat_masuk';
-                                            const categoryColor = isMasuk ? 'success' as const : 'primary' as const;
-                                            const categoryLabel = isMasuk ? 'Masuk' : 'Keluar';
 
                                             // Status mapping from E-Surat structure
                                             const statusCfg = STATUS_MAPPING[surat.status];
@@ -1123,44 +1067,18 @@ export default function SuratIndex() {
                                                                     oleh {creator?.name || 'Sekretaris'}
                                                                 </span>
                                                             </div>
-                                                            <div className="text-gray-400 mt-1">
-                                                                <Paperclip className="w-3.5 h-3.5" />
-                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-3.5 text-gray-500 text-theme-sm dark:text-gray-400">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                                                {formattedStartDay}
-                                                            </span>
-                                                            <span className="text-xs text-gray-400">
-                                                                {formattedStartTime}
-                                                            </span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="py-3.5 text-gray-500 text-theme-sm dark:text-gray-400">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                                                {formattedEndDay}
-                                                            </span>
-                                                            <span className="text-xs text-gray-400">
-                                                                {formattedEndTime}
-                                                            </span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="py-3.5">
-                                                        <Badge size="sm" variant="solid" color={categoryColor}>
-                                                            {categoryLabel}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="py-3.5">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#eef2ff] text-[#4f46e5] dark:bg-[#4f46e5]/10 dark:text-[#a5b4fc]">
-                                                            {surat.jenis_surat?.nama || 'Umum'}
+                                                        <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                                            {formattedStartDay}
                                                         </span>
                                                     </TableCell>
                                                     <TableCell className="py-3.5">
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-white/5 dark:text-white/80">
-                                                            {surat.tujuan_surat}
+                                                            {jenisSurat?.nama
+                                                                ? jenisSurat.nama
+                                                                : '—'}
                                                         </span>
                                                     </TableCell>
                                                     <TableCell className="py-3.5">
@@ -1168,26 +1086,12 @@ export default function SuratIndex() {
                                                             {statusCfg.label}
                                                         </Badge>
                                                     </TableCell>
-                                                    <TableCell className="py-3.5">
-                                                        <div className="flex items-center -space-x-2">
-                                                            {creator && (
-                                                                <div title={`Pembuat: ${creator.name}`} className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 bg-blue-500 text-[10px] text-white font-bold cursor-help">
-                                                                    {getInitials(creator.name)}
-                                                                </div>
-                                                            )}
-                                                            {approver && (
-                                                                <div title={`Penyetuju: ${approver.name}`} className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 bg-[#7c3aed] text-[10px] text-white font-bold cursor-help">
-                                                                    {getInitials(approver.name)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
                                                 </TableRow>
                                             );
                                         })
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="py-10 text-center text-gray-500">
+                                            <TableCell colSpan={5} className="py-10 text-center text-gray-500">
                                                 Tidak ada surat ditemukan.
                                             </TableCell>
                                         </TableRow>
@@ -1224,115 +1128,111 @@ export default function SuratIndex() {
                 )}
             </div>
 
-            {/* Confirm Action Modal */}
-            {showConfirm && (
-                <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
-                                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                                </svg>
-                            </div>
-                            <h3 className="font-bold text-gray-900 dark:text-white">Ajukan Surat?</h3>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                            Surat akan dikirim ke approver untuk ditinjau. Setelah diajukan, Anda tidak dapat mengubah isi surat tanpa mengajukan revisi.
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowConfirm(false)}
-                                className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleSubmitLetter}
-                                disabled={isSubmitting}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-60"
-                                style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}
-                            >
-                                {isSubmitting ? (
-                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                ) : null}
-                                Ya, Ajukan
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* ── Approve Confirmation Modal ── */}
+            <ConfirmDialog
+                open={showApproveConfirm}
+                icon={
+                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                }
+                iconBgClass="bg-blue-100"
+                title="Setujui surat ini?"
+                description={
+                    <>Surat akan ditandai sebagai <span className="font-semibold text-blue-600 dark:text-blue-400">Disetujui</span> dan tidak dapat diubah kembali.</>
+                }
+                cancelLabel="Batal"
+                confirmLabel="Setujui"
+                confirmBtnClass="bg-blue-600 hover:bg-blue-500"
+                isLoading={isApproving}
+                onCancel={() => setShowApproveConfirm(false)}
+                onConfirm={() => {
+                    if (!activeLetter) return;
+                    setIsApproving(true);
+                    router.post(
+                        route('surat.approve', activeLetter.id),
+                        {},
+                        {
+                            onSuccess: () => {
+                                setShowApproveConfirm(false);
+                                closeDetailView();
+                            },
+                            onFinish: () => setIsApproving(false),
+                        }
+                    );
+                }}
+            />
 
-            {/* Reject Modal */}
-            {showRejectModal && (
-                <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-100">
-                                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <h3 className="font-bold text-gray-900 dark:text-white">Tolak Surat</h3>
-                        </div>
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Alasan Penolakan <span className="text-red-500">*</span>
-                            </label>
-                            <textarea
-                                value={rejectNote}
-                                onChange={(e) => setRejectNote(e.target.value)}
-                                rows={4}
-                                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm px-3 py-2"
-                                placeholder="Masukkan alasan kenapa surat ini ditolak..."
-                            ></textarea>
-                        </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowRejectModal(false);
-                                    setRejectNote('');
-                                }}
-                                className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (!rejectNote.trim()) {
-                                        alert('Catatan penolakan harus diisi.');
-                                        return;
-                                    }
-                                    setIsRejecting(true);
-                                    router.post(
-                                        route('surat.reject', activeLetter?.id),
-                                        { catatan_penolakan: rejectNote },
-                                        {
-                                            onFinish: () => {
-                                                setIsRejecting(false);
-                                                setShowRejectModal(false);
-                                                setRejectNote('');
-                                            },
-                                        }
-                                    );
-                                }}
-                                disabled={isRejecting || !rejectNote.trim()}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-60"
-                            >
-                                {isRejecting ? (
-                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                ) : null}
-                                Ya, Tolak
-                            </button>
-                        </div>
+            {/* ── Submit / Ajukan Confirmation Modal ── */}
+            <ConfirmDialog
+                open={showConfirm}
+                icon={
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                }
+                iconBgClass="bg-indigo-100"
+                title="Ajukan surat ini?"
+                description="Surat akan dikirim ke approver untuk ditinjau. Setelah diajukan, Anda tidak dapat mengubah isi surat tanpa mengajukan revisi."
+                cancelLabel="Batal"
+                confirmLabel="Ya, Ajukan"
+                confirmBtnClass="bg-indigo-600 hover:bg-indigo-700"
+                isLoading={isSubmitting}
+                onCancel={() => setShowConfirm(false)}
+                onConfirm={handleSubmitLetter}
+            />
+
+            {/* ── Reject Modal ── */}
+            <ConfirmDialog
+                open={showRejectModal}
+                icon={
+                    <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                }
+                iconBgClass="bg-red-100"
+                title="Tolak surat ini?"
+                description="Berikan alasan penolakan agar pembuat surat dapat melakukan perbaikan."
+                extra={
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                            Alasan Penolakan <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            value={rejectNote}
+                            onChange={(e) => setRejectNote(e.target.value)}
+                            rows={3}
+                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder:text-gray-400 transition resize-none"
+                            placeholder="Masukkan alasan penolakan..."
+                        />
                     </div>
-                </div>
-            )}
+                }
+                cancelLabel="Batal"
+                confirmLabel="Ya, Tolak"
+                confirmBtnClass="bg-red-500 hover:bg-red-600"
+                isLoading={isRejecting}
+                confirmDisabled={!rejectNote.trim()}
+                onCancel={() => {
+                    setShowRejectModal(false);
+                    setRejectNote('');
+                }}
+                onConfirm={() => {
+                    if (!rejectNote.trim()) return;
+                    setIsRejecting(true);
+                    router.post(
+                        route('surat.reject', activeLetter?.id),
+                        { catatan_penolakan: rejectNote },
+                        {
+                            onSuccess: () => {
+                                setShowRejectModal(false);
+                                setRejectNote('');
+                                closeDetailView();
+                            },
+                            onFinish: () => setIsRejecting(false),
+                        }
+                    );
+                }}
+            />
         </AuthenticatedLayout>
     );
 }

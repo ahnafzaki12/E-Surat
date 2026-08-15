@@ -536,9 +536,9 @@ export default function SuratCreate() {
                                             </div>
 
                                             <div className="border-t border-gray-150 dark:border-gray-800 pt-3 space-y-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                                <p>💡 Kotak biru mewakili QR Code sertifikasi tanda tangan digital.</p>
-                                                <p>📍 Posisi saat ini: <strong>Halaman {qrPosition.page}</strong></p>
-                                                <p>📏 Dimensi: <strong>{Math.round(qrPosition.width * 100)}% x {Math.round(qrPosition.height * 100)}%</strong></p>
+                                                <p>Kotak biru mewakili QR Code sertifikasi tanda tangan digital.</p>
+                                                <p>Posisi saat ini: <strong>Halaman {qrPosition.page}</strong></p>
+                                                <p>Dimensi: <strong>{Math.round(qrPosition.width * 100)}% x {Math.round(qrPosition.height * 100)}%</strong></p>
                                             </div>
                                         </div>
 
@@ -673,7 +673,7 @@ export default function SuratCreate() {
 
                                             {/* Posisi QR Code */}
                                             <div className="grid grid-cols-3 p-4 bg-brand-25/30 dark:bg-brand-950/5">
-                                                <span className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-1.5">🎯 Letak QR TTD</span>
+                                                <span className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-1.5">Letak QR TTD</span>
                                                 <span className="col-span-2 text-xs sm:text-sm font-semibold text-brand-700 dark:text-brand-350">
                                                     Halaman {qrPosition.page} (Koordinat X: {Math.round(qrPosition.x * 100)}%, Y: {Math.round(qrPosition.y * 100)}%)
                                                 </span>

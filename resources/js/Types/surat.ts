@@ -55,6 +55,7 @@ export interface Surat {
     qr_position?: QrPosition | null;
     catatan_penolakan?: string | null;
     file_draft?: SuratFile | null;
+    verification_token?: string | null;
     approval_logs?: ApprovalLog[];
 }
 

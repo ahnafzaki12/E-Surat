@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import AuthenticatedLayout from '../../Layouts/AuthenticatedLayout';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../components/ui/table';
 import Badge from '../../components/ui/badge/Badge';
@@ -12,6 +12,9 @@ import { Rnd } from 'react-rnd';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import SpecimenQR from '../../components/common/SpecimenQR';
+import { StatusBadge, statusConfiguration as STATUS_MAPPING } from '../../components/surat/StatusBadge';
+import { useSuratFilters, type SuratSortKey } from '../../Hooks/useSuratFilters';
+import type { Surat as SuratDetail, SuratStatus } from '../../Types/surat';
 
 // Set worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -300,38 +303,16 @@ interface PaginatedSurats {
 }
 
 interface PageProps {
-    auth: { user: { id: number; name: string; email: string; role?: { name: string } } };
+    auth: { user: { id: number; name: string; email: string; role_id?: number; role?: { name: string } } };
     surats: PaginatedSurats;
     flash?: { success?: string; error?: string };
     [key: string]: unknown;
 }
 
-type SortConfig = {
-    key: 'perihal' | 'tanggal_surat' | 'approved_at' | 'status' | 'tujuan_surat' | 'jenis_surat' | 'nomor_surat_formatted';
-    direction: 'asc' | 'desc' | null;
-};
-
-const STATUS_MAPPING = {
-    draft: { label: 'Draft', color: 'light' as const },
-    menunggu_persetujuan: { label: 'Menunggu Persetujuan', color: 'warning' as const },
-    ditolak: { label: 'Ditolak', color: 'error' as const },
-    disetujui: { label: 'Disetujui', color: 'success' as const },
-};
-
-function StatusBadge({ status }: { status: string }) {
-    const cfg = STATUS_MAPPING[status as keyof typeof STATUS_MAPPING] ?? { label: status, color: 'light' as const };
-    return (
-        <Badge color={cfg.color} variant="light" size="sm">
-            {cfg.label}
-        </Badge>
-    );
-}
-
-
-const AKSI_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-    diajukan: { label: 'Diajukan', icon: '📤', color: 'text-indigo-600 dark:text-indigo-400' },
-    disetujui: { label: 'Disetujui', icon: '✅', color: 'text-emerald-600 dark:text-emerald-400' },
-    ditolak: { label: 'Ditolak', icon: '❌', color: 'text-red-600 dark:text-red-400' },
+const AKSI_CONFIG: Record<string, { label: string; color: string }> = {
+    diajukan: { label: 'Diajukan', color: 'text-indigo-600 dark:text-indigo-400' },
+    disetujui: { label: 'Disetujui', color: 'text-emerald-600 dark:text-emerald-400' },
+    ditolak: { label: 'Ditolak', color: 'text-red-600 dark:text-red-400' },
 };
 
 function formatDate(dateStr: string | null) {
@@ -365,12 +346,18 @@ export default function SuratIndex() {
 
     const [searchQuery, setSearchQuery] = useState('');
 
-    const [activeLetter, setActiveLetter] = useState<any>(null);
+    const [activeLetter, setActiveLetter] = useState<SuratDetail | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [isSavingPlacement, setIsSavingPlacement] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+
+    // Approver states
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectNote, setRejectNote] = useState('');
+    const [isApproving, setIsApproving] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
 
     // PDF Viewer States
     const [numPages, setNumPages] = useState<number | null>(null);
@@ -395,9 +382,9 @@ export default function SuratIndex() {
         height: 0
     });
 
+    const isApprover = user?.role?.name?.toLowerCase() === 'approver' || user?.role_id === 2;
     const canSubmit = activeLetter ? (activeLetter.status === 'draft' || activeLetter.status === 'ditolak') : false;
     const isWaiting = activeLetter ? activeLetter.status === 'menunggu_persetujuan' : false;
-    const isApproved = activeLetter ? activeLetter.status === 'disetujui' : false;
 
     const updateBadgePixels = useCallback((dispW: number, dispH: number, x: number, y: number, w: number, h: number) => {
         if (dispW === 0 || dispH === 0) return;
@@ -474,6 +461,8 @@ export default function SuratIndex() {
     }, []);
 
     const handleSavePlacement = () => {
+        if (!activeLetter) return;
+
         setIsSavingPlacement(true);
         router.put(route('surat.placement.update', activeLetter.id), qrPosition, {
             preserveScroll: true,
@@ -485,6 +474,8 @@ export default function SuratIndex() {
     };
 
     const handleSubmitLetter = () => {
+        if (!activeLetter) return;
+
         setIsSubmitting(true);
         router.post(
             route('surat.submit', activeLetter.id),
@@ -516,24 +507,16 @@ export default function SuratIndex() {
         }
     }, [loadLetterDetails]);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [filterStatus, setFilterStatus] = useState('all');
+    const [filterStatus, setFilterStatus] = useState<SuratStatus | 'all'>('all');
     const [filterCategory, setFilterCategory] = useState('all');
-    const [sortConfig, setSortConfig] = useState<SortConfig>({
-        key: 'tanggal_surat',
-        direction: 'desc',
+    const { filteredSurats, sortConfig, toggleSort } = useSuratFilters({
+        data: surats.data,
+        searchQuery,
+        status: filterStatus,
+        category: filterCategory,
     });
 
-    const handleSort = (key: SortConfig['key']) => {
-        let direction: SortConfig['direction'] = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
-            direction = null;
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key: SortConfig['key']) => {
+    const getSortIcon = (key: SuratSortKey) => {
         if (sortConfig.key !== key || !sortConfig.direction) {
             return <ArrowUpDown className="ml-1 size-3.5 text-gray-400 shrink-0" />;
         }
@@ -543,56 +526,6 @@ export default function SuratIndex() {
             <ArrowDown className="ml-1 size-3.5 text-blue-500 shrink-0" />
         );
     };
-
-    // Filter local surats
-    const filteredSurats = useMemo(() => {
-        let result = [...surats.data];
-
-        if (filterStatus !== 'all') {
-            result = result.filter((s) => s.status === filterStatus);
-        }
-
-        if (filterCategory !== 'all') {
-            result = result.filter((s) => s.jenis_surat?.kategori === filterCategory);
-        }
-
-        if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
-            result = result.filter(
-                (s) =>
-                    s.perihal.toLowerCase().includes(lowerQuery) ||
-                    s.tujuan_surat.toLowerCase().includes(lowerQuery) ||
-                    (s.nomor_surat_formatted ?? '').toLowerCase().includes(lowerQuery) ||
-                    (s.jenis_surat?.nama ?? '').toLowerCase().includes(lowerQuery),
-            );
-        }
-
-        if (sortConfig.direction) {
-            result.sort((a, b) => {
-                let aValue: any;
-                let bValue: any;
-
-                if (sortConfig.key === 'jenis_surat') {
-                    aValue = a.jenis_surat?.nama ?? '';
-                    bValue = b.jenis_surat?.nama ?? '';
-                } else {
-                    aValue = a[sortConfig.key] ?? '';
-                    bValue = b[sortConfig.key] ?? '';
-                }
-
-                if (typeof aValue === 'string') {
-                    aValue = aValue.toLowerCase();
-                    bValue = bValue.toLowerCase();
-                }
-
-                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        return result;
-    }, [surats.data, searchQuery, filterStatus, filterCategory, sortConfig]);
 
     const getInitials = (name: string) => {
         return name
@@ -690,15 +623,44 @@ export default function SuratIndex() {
                                         {activeLetter.status === 'ditolak' ? 'Ajukan Ulang' : 'Ajukan ke Approver'}
                                     </button>
                                 )}
-                                {isWaiting && (
-                                    <span className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 px-4 py-2 rounded-xl">
-                                        ⏳ Menunggu keputusan approver
-                                    </span>
-                                )}
-                                {isApproved && (
-                                    <span className="text-sm text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 px-4 py-2 rounded-xl">
-                                        ✅ Surat telah disetujui
-                                    </span>
+                                {isApprover && isWaiting && (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setShowRejectModal(true)}
+                                            disabled={isApproving || isRejecting}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition disabled:opacity-50"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Tolak
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (!confirm('Apakah Anda yakin ingin menyetujui surat ini?')) return;
+                                                setIsApproving(true);
+                                                router.post(
+                                                    route('surat.approve', activeLetter.id),
+                                                    {},
+                                                    { onFinish: () => setIsApproving(false) }
+                                                );
+                                            }}
+                                            disabled={isApproving || isRejecting}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-md transition disabled:opacity-50"
+                                        >
+                                            {isApproving ? (
+                                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                            )}
+                                            Setujui
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -780,12 +742,12 @@ export default function SuratIndex() {
                                         </div>
                                         <div className="px-5 py-4">
                                             <ol className="relative border-l border-gray-100 dark:border-gray-700 ml-2 space-y-4">
-                                                {activeLetter.approval_logs.map((log: any) => {
-                                                    const cfg = AKSI_CONFIG[log.aksi] ?? { label: log.aksi, icon: '📋', color: 'text-gray-600 dark:text-gray-400' };
+                                                {activeLetter.approval_logs.map((log) => {
+                                                    const cfg = AKSI_CONFIG[log.aksi] ?? { label: log.aksi, color: 'text-gray-600 dark:text-gray-400' };
                                                     return (
                                                         <li key={log.id} className="ml-4">
                                                             <div className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 bg-indigo-300 dark:bg-indigo-500" />
-                                                            <p className={`text-xs font-semibold ${cfg.color}`}>{cfg.icon} {cfg.label}</p>
+                                                            <p className={`text-xs font-semibold ${cfg.color}`}>{cfg.label}</p>
                                                             <p className="text-xs text-gray-500 dark:text-gray-400">{log.user?.name ?? 'Sistem'}</p>
                                                             <p className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(log.created_at)}</p>
                                                             {log.catatan && (
@@ -905,8 +867,8 @@ export default function SuratIndex() {
                                                 disableDragging={!canSubmit}
                                                 enableResizing={false}
                                                 className={`absolute z-10 rounded shadow-md bg-white/90 overflow-hidden ${canSubmit
-                                                        ? 'border-2 border-indigo-500 cursor-move group'
-                                                        : 'border border-gray-300 opacity-80 pointer-events-none'
+                                                    ? 'border-2 border-indigo-500 cursor-move group'
+                                                    : 'border border-gray-300 opacity-80 pointer-events-none'
                                                     }`}
                                             >
                                                 <SpecimenQR canSubmit={canSubmit} />
@@ -982,7 +944,7 @@ export default function SuratIndex() {
                                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Status</label>
                                             <select
                                                 value={filterStatus}
-                                                onChange={(e) => setFilterStatus(e.target.value)}
+                                                onChange={(event) => setFilterStatus(event.target.value as SuratStatus | 'all')}
                                                 className="w-full h-10 px-3 rounded-lg border border-gray-200 bg-transparent dark:border-gray-800 text-sm text-gray-800 dark:text-white"
                                             >
                                                 <option value="all">Semua Status</option>
@@ -1029,7 +991,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('nomor_surat_formatted')}
+                                            onClick={() => toggleSort('nomor_surat_formatted')}
                                         >
                                             <div className="flex items-center">
                                                 No. Surat
@@ -1039,7 +1001,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('perihal')}
+                                            onClick={() => toggleSort('perihal')}
                                         >
                                             <div className="flex items-center">
                                                 Perihal
@@ -1049,7 +1011,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('tanggal_surat')}
+                                            onClick={() => toggleSort('tanggal_surat')}
                                         >
                                             <div className="flex items-center">
                                                 Tanggal Surat
@@ -1059,7 +1021,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('approved_at')}
+                                            onClick={() => toggleSort('approved_at')}
                                         >
                                             <div className="flex items-center">
                                                 Tanggal Approval
@@ -1069,7 +1031,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('status')}
+                                            onClick={() => toggleSort('status')}
                                         >
                                             <div className="flex items-center">
                                                 Kategori
@@ -1079,7 +1041,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('jenis_surat')}
+                                            onClick={() => toggleSort('jenis_surat')}
                                         >
                                             <div className="flex items-center">
                                                 Jenis Surat
@@ -1089,7 +1051,7 @@ export default function SuratIndex() {
                                         <TableCell
                                             isHeader
                                             className="py-3 font-semibold text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                                            onClick={() => handleSort('tujuan_surat')}
+                                            onClick={() => toggleSort('tujuan_surat')}
                                         >
                                             <div className="flex items-center">
                                                 Tujuan / Lembaga
@@ -1297,6 +1259,75 @@ export default function SuratIndex() {
                                     </svg>
                                 ) : null}
                                 Ya, Ajukan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reject Modal */}
+            {showRejectModal && (
+                <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-100">
+                                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="font-bold text-gray-900 dark:text-white">Tolak Surat</h3>
+                        </div>
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Alasan Penolakan <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                value={rejectNote}
+                                onChange={(e) => setRejectNote(e.target.value)}
+                                rows={4}
+                                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm px-3 py-2"
+                                placeholder="Masukkan alasan kenapa surat ini ditolak..."
+                            ></textarea>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowRejectModal(false);
+                                    setRejectNote('');
+                                }}
+                                className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!rejectNote.trim()) {
+                                        alert('Catatan penolakan harus diisi.');
+                                        return;
+                                    }
+                                    setIsRejecting(true);
+                                    router.post(
+                                        route('surat.reject', activeLetter?.id),
+                                        { catatan_penolakan: rejectNote },
+                                        {
+                                            onFinish: () => {
+                                                setIsRejecting(false);
+                                                setShowRejectModal(false);
+                                                setRejectNote('');
+                                            },
+                                        }
+                                    );
+                                }}
+                                disabled={isRejecting || !rejectNote.trim()}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-60"
+                            >
+                                {isRejecting ? (
+                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                ) : null}
+                                Ya, Tolak
                             </button>
                         </div>
                     </div>

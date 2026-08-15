@@ -30,7 +30,8 @@ Route::middleware('auth')->group(function () {
 
 // ── Surat ───────────────────────────────────────────────────────────────────
 Route::middleware(['auth'])->group(function () {
-    // Resource surat: index, create, store, show
+    // Resource surat: index, create, store
+    // surat.show digunakan sebagai JSON API endpoint oleh Index panel (bukan halaman terpisah)
     Route::resource('surat', SuratController::class)
         ->only(['index', 'create', 'store', 'show']);
 
@@ -45,5 +46,13 @@ Route::middleware(['auth'])->group(function () {
     // Ajukan surat ke approver
     Route::post('surat/{surat}/submit', [SuratController::class, 'submit'])
         ->name('surat.submit');
+
+    // Approve surat
+    Route::post('surat/{surat}/approve', [SuratController::class, 'approve'])
+        ->name('surat.approve');
+
+    // Reject surat
+    Route::post('surat/{surat}/reject', [SuratController::class, 'reject'])
+        ->name('surat.reject');
 });
 

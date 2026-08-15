@@ -124,16 +124,10 @@ class SuratController extends Controller
 
         $surat = $query->findOrFail($id);
 
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'surat'       => $surat,
-                'previewUrl'  => route('surat.preview', $surat->id),
-            ]);
-        }
-
-        return Inertia::render('Surat/Show', [
-            'surat'       => $surat,
-            'previewUrl'  => route('surat.preview', $surat->id),
+        // Always return JSON (used by Index panel via fetch)
+        return response()->json([
+            'surat'      => $surat,
+            'previewUrl' => route('surat.preview', $surat->id),
         ]);
     }
 
@@ -220,5 +214,65 @@ class SuratController extends Controller
         return redirect()
             ->route('surat.index', ['open' => $surat->id])
             ->with('success', 'Posisi QR Code berhasil disimpan.');
+    }
+
+    /**
+     * Setujui surat.
+     */
+    public function approve(string $id)
+    {
+        $surat = Surat::whereIn('status', ['menunggu_persetujuan'])
+            ->findOrFail($id);
+
+        $surat->update([
+            'status' => 'disetujui',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'catatan_penolakan' => null,
+        ]);
+
+        ApprovalLog::create([
+            'surat_id' => $surat->id,
+            'user_id' => Auth::id(),
+            'aksi' => 'disetujui',
+            'catatan' => null,
+            'created_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('surat.index', ['open' => $surat->id])
+            ->with('success', 'Surat berhasil disetujui.');
+    }
+
+    /**
+     * Tolak surat dengan catatan.
+     */
+    public function reject(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'catatan_penolakan' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $surat = Surat::whereIn('status', ['menunggu_persetujuan'])
+            ->findOrFail($id);
+
+        $surat->update([
+            'status' => 'ditolak',
+            'catatan_penolakan' => $validated['catatan_penolakan'],
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+
+        ApprovalLog::create([
+            'surat_id' => $surat->id,
+            'user_id' => Auth::id(),
+            'aksi' => 'ditolak',
+            'catatan' => $validated['catatan_penolakan'],
+            'created_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('surat.index', ['open' => $surat->id])
+            ->with('success', 'Surat telah ditolak.');
     }
 }

@@ -115,12 +115,13 @@ class FinalSuratPdfService
         $height = max(128, (int) round($heightMm * $scale));
         $badge = imagecreatetruecolor($width, $height);
         $white = imagecolorallocate($badge, 255, 255, 255);
-        $border = imagecolorallocate($badge, 203, 213, 225);
+        $border = imagecolorallocate($badge, 156, 163, 175);
         $dark = imagecolorallocate($badge, 30, 41, 59);
-        $muted = imagecolorallocate($badge, 100, 116, 139);
 
         imagefill($badge, 0, 0, $white);
-        imagerectangle($badge, 0, 0, $width - 1, $height - 1, $border);
+        
+        // Garis batas hanya di bawah dan tipis
+        imageline($badge, 0, $height - 1, $width - 1, $height - 1, $border);
 
         $padding = (int) round($height * 0.12);
         $qrSize = $height - (2 * $padding);
@@ -128,15 +129,34 @@ class FinalSuratPdfService
         imagecopyresampled($badge, $qr, $padding, $padding, 0, 0, $qrSize, $qrSize, imagesx($qr), imagesy($qr));
         imagedestroy($qr);
 
+        $fontPath = base_path('vendor/endroid/qr-code/assets/open_sans.ttf');
         $textX = $padding + $qrSize + (int) round($height * 0.11);
-        $lineY = $padding;
-        imagestring($badge, 5, $textX, $lineY, 'Ditandatangani secara elektronik', $dark);
-        $lineY += 24;
-        imagestring($badge, 4, $textX, $lineY, 'Oleh: ' . $this->ascii($surat->approvedBy?->name ?? 'Approver'), $muted);
-        $lineY += 18;
-        imagestring($badge, 3, $textX, $lineY, $surat->approved_at?->translatedFormat('d M Y H:i') ?? '', $muted);
+        $lineY = $padding + 12; // Baseline for TTF
+        
+        // TTE oleh :
+        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, 'TTE oleh :');
         $lineY += 16;
-        imagestring($badge, 2, $textX, $lineY, $this->ascii((string) parse_url($verificationUrl, PHP_URL_HOST)), $muted);
+        
+        // NAMA APPROVER
+        $namaApprover = strtoupper($this->ascii($surat->approvedBy?->name ?? 'APPROVER'));
+        imagettftext($badge, 10, 0, $textX, $lineY, $dark, $fontPath, $namaApprover);
+        imagettftext($badge, 10, 0, $textX + 1, $lineY, $dark, $fontPath, $namaApprover); // Emulate bold
+        $lineY += 18;
+        
+        // Tanggal dan Jam
+        $tanggal = $surat->approved_at ? $surat->approved_at->translatedFormat('d F Y H:i:s') . ' WIB' : date('d F Y H:i:s') . ' WIB';
+        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, $tanggal);
+        $lineY += 28; // Jarak yang diperbesar/diperjauh
+        
+        // Verifikasi melalui
+        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, 'Verifikasi melalui');
+        $lineY += 16;
+        
+        // URL Web
+        $scheme = parse_url($verificationUrl, PHP_URL_SCHEME) ?? 'https';
+        $host = parse_url($verificationUrl, PHP_URL_HOST) ?? 'esurat.pissya.or.id';
+        $shortUrl = $scheme . '://' . $host;
+        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, $this->ascii($shortUrl));
 
         imagepng($badge, $badgePath);
         imagedestroy($badge);

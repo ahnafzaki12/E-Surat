@@ -7,6 +7,7 @@ import Badge from '../../components/ui/badge/Badge';
 import SpecimenQR from '../../components/common/SpecimenQR';
 import Label from '../../components/form/Label';
 import InputField from '../../components/form/input/InputField';
+import DatePicker from '../../components/form/date-picker';
 import { Upload, FileText, ClipboardCheck, CheckCircle2, ChevronLeft, ArrowRight, Eye, Calendar, Building, Landmark, Sliders, ChevronRight } from 'lucide-react';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Rnd } from 'react-rnd';
@@ -436,12 +437,12 @@ export default function SuratCreate() {
                                         {/* Tanggal Surat */}
                                         <div>
                                             <Label htmlFor="tanggal_surat">Tanggal Surat <span className="text-red-500">*</span></Label>
-                                            <InputField
+                                            <DatePicker
                                                 id="tanggal_surat"
-                                                type="date"
-                                                value={data.tanggal_surat}
-                                                onChange={(e) => handleFieldChange('tanggal_surat', e.target.value)}
-                                                error={!!localErrors.tanggal_surat || !!errors.tanggal_surat}
+                                                defaultDate={data.tanggal_surat}
+                                                onChange={(selectedDates, dateStr) => handleFieldChange('tanggal_surat', dateStr)}
+                                                placeholder="Pilih Tanggal Surat"
+                                                position="above"
                                             />
                                             <FieldError message={localErrors.tanggal_surat || errors.tanggal_surat} />
                                         </div>

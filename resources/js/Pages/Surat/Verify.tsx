@@ -8,7 +8,6 @@ interface VerifyProps {
         jenis_surat: string | null;
         approved_by: string | null;
         approved_at: string | null;
-        file_hash: string | null;
         download_url: string;
     };
 }
@@ -72,11 +71,6 @@ export default function Verify({ surat }: VerifyProps) {
                                 <dd className="mt-2 text-sm font-semibold text-slate-800">{formatDateTime(surat.approved_at)}</dd>
                             </div>
                         </dl>
-
-                        <div className="mt-8 rounded-2xl bg-slate-50 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Integritas Dokumen (SHA-256)</p>
-                            <p className="mt-2 break-all font-mono text-xs text-slate-600">{surat.file_hash || '—'}</p>
-                        </div>
 
                         <a href={surat.download_url} className="mt-8 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500">
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

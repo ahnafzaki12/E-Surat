@@ -18,12 +18,19 @@ class SuratController extends Controller
      */
     public function index()
     {
-        $surats = Surat::with(['jenisSurat'])
-            ->where('created_by', Auth::id())
-            ->latest()
-            ->paginate(10);
+        $query = Surat::with(['jenisSurat', 'createdBy', 'approvedBy']);
 
-        return Inertia::render('Sekretaris/Surat/Index', [
+        $role = Auth::user()->role?->name;
+
+        if ($role === 'sekretaris') {
+            $query->where('created_by', Auth::id());
+        } elseif ($role === 'approver') {
+            $query->whereIn('status', ['menunggu_persetujuan', 'disetujui', 'ditolak']);
+        }
+
+        $surats = $query->latest()->paginate(10);
+
+        return Inertia::render('Surat/Index', [
             'surats' => $surats,
         ]);
     }
@@ -35,7 +42,7 @@ class SuratController extends Controller
     {
         $jenisSurats = JenisSurat::orderBy('kode')->get(['id', 'kode', 'nama', 'kategori', 'qr_position_default']);
 
-        return Inertia::render('Sekretaris/Surat/Create', [
+        return Inertia::render('Surat/Create', [
             'jenisSurats' => $jenisSurats,
         ]);
     }
@@ -46,12 +53,18 @@ class SuratController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nomor_surat'    => ['nullable', 'string', 'max:255'],
+            'nomor_surat' => ['nullable', 'string', 'max:255'],
             'jenis_surat_id' => ['required', 'exists:jenis_surats,id'],
-            'lembaga'        => ['nullable', 'string', 'max:255'], // Placeholder for when ERD is updated
-            'perihal'        => ['required', 'string', 'max:255'],
-            'tanggal_surat'  => ['required', 'date'],
-            'file_draft'     => ['required', 'file', 'mimes:pdf', 'max:10240'], // max 10MB
+            'lembaga' => ['nullable', 'string', 'max:255'], // Placeholder for when ERD is updated
+            'perihal' => ['required', 'string', 'max:255'],
+            'tanggal_surat' => ['required', 'date'],
+            'file_draft' => ['required', 'file', 'mimes:pdf', 'max:10240'], // max 10MB
+            'qr_position' => ['nullable', 'array'],
+            'qr_position.page' => ['required_with:qr_position', 'integer', 'min:1'],
+            'qr_position.x' => ['required_with:qr_position', 'numeric', 'min:0', 'max:1'],
+            'qr_position.y' => ['required_with:qr_position', 'numeric', 'min:0', 'max:1'],
+            'qr_position.width' => ['required_with:qr_position', 'numeric', 'min:0', 'max:1'],
+            'qr_position.height' => ['required_with:qr_position', 'numeric', 'min:0', 'max:1'],
         ]);
 
         $file = $request->file('file_draft');
@@ -66,36 +79,61 @@ class SuratController extends Controller
         $surat = Surat::create([
             'nomor_surat_formatted' => $validated['nomor_surat'] ?? null,
             'jenis_surat_id' => $validated['jenis_surat_id'],
-            'perihal'        => $validated['perihal'],
-            'tujuan_surat'   => $validated['lembaga'] ?? '-',
-            'tanggal_surat'  => $validated['tanggal_surat'],
-            'file_draft'     => [
-                'path'          => $storagePath,
+            'perihal' => $validated['perihal'],
+            'tujuan_surat' => $validated['lembaga'] ?? '-',
+            'tanggal_surat' => $validated['tanggal_surat'],
+            'file_draft' => [
+                'path' => $storagePath,
                 'original_name' => $originalName,
-                'size'          => $file->getSize(),
-                'mime'          => 'application/pdf',
+                'size' => $file->getSize(),
+                'mime' => 'application/pdf',
             ],
-            'status'         => 'draft',
-            'created_by'     => Auth::id(),
+            'qr_position' => $validated['qr_position'] ?? null,
+            'status' => 'menunggu_persetujuan',
+            'created_by' => Auth::id(),
+        ]);
+
+        // Catat ke audit trail
+        ApprovalLog::create([
+            'surat_id' => $surat->id,
+            'user_id' => Auth::id(),
+            'aksi' => 'diajukan',
+            'catatan' => null,
+            'created_at' => now(),
         ]);
 
         return redirect()
-            ->route('sekretaris.surat.show', $surat->id)
-            ->with('success', 'Surat berhasil disimpan sebagai draft.');
+            ->back()
+            ->with('success', 'Surat berhasil diajukan.');
     }
 
     /**
      * Detail surat milik sekretaris.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        $surat = Surat::with(['jenisSurat', 'approvalLogs.user'])
-            ->where('created_by', Auth::id())
-            ->findOrFail($id);
+        $query = Surat::with(['jenisSurat', 'approvalLogs.user']);
 
-        return Inertia::render('Sekretaris/Surat/Show', [
+        $role = Auth::user()->role?->name;
+
+        if ($role === 'sekretaris') {
+            $query->where('created_by', Auth::id());
+        } elseif ($role === 'approver') {
+            $query->whereIn('status', ['menunggu_persetujuan', 'disetujui', 'ditolak']);
+        }
+
+        $surat = $query->findOrFail($id);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'surat'       => $surat,
+                'previewUrl'  => route('surat.preview', $surat->id),
+            ]);
+        }
+
+        return Inertia::render('Surat/Show', [
             'surat'       => $surat,
-            'previewUrl'  => route('sekretaris.surat.preview', $surat->id),
+            'previewUrl'  => route('surat.preview', $surat->id),
         ]);
     }
 
@@ -104,23 +142,32 @@ class SuratController extends Controller
      */
     public function previewFile(string $id)
     {
-        $surat = Surat::where('created_by', Auth::id())->findOrFail($id);
+        $query = Surat::query();
+        $role = Auth::user()->role?->name;
+
+        if ($role === 'sekretaris') {
+            $query->where('created_by', Auth::id());
+        } elseif ($role === 'approver') {
+            $query->whereIn('status', ['menunggu_persetujuan', 'disetujui', 'ditolak']);
+        }
+
+        $surat = $query->findOrFail($id);
 
         $fileDraft = $surat->file_draft;
-        if (! $fileDraft || ! isset($fileDraft['path'])) {
+        if (!$fileDraft || !isset($fileDraft['path'])) {
             abort(404, 'File draft tidak ditemukan.');
         }
 
         $path = $fileDraft['path'];
 
-        if (! Storage::disk('private')->exists($path)) {
+        if (!Storage::disk('private')->exists($path)) {
             abort(404, 'File tidak ada di storage.');
         }
 
         return response()->stream(function () use ($path) {
             echo Storage::disk('private')->get($path);
         }, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="preview.pdf"',
         ]);
     }
@@ -138,15 +185,15 @@ class SuratController extends Controller
 
         // Catat ke audit trail
         ApprovalLog::create([
-            'surat_id'   => $surat->id,
-            'user_id'    => Auth::id(),
-            'aksi'       => 'diajukan',
-            'catatan'    => null,
+            'surat_id' => $surat->id,
+            'user_id' => Auth::id(),
+            'aksi' => 'diajukan',
+            'catatan' => null,
             'created_at' => now(),
         ]);
 
         return redirect()
-            ->route('sekretaris.surat.show', $surat->id)
+            ->route('surat.index', ['open' => $surat->id])
             ->with('success', 'Surat berhasil diajukan untuk persetujuan.');
     }
     /**
@@ -159,10 +206,10 @@ class SuratController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validate([
-            'page'   => ['required', 'integer', 'min:1'],
-            'x'      => ['required', 'numeric', 'min:0', 'max:1'],
-            'y'      => ['required', 'numeric', 'min:0', 'max:1'],
-            'width'  => ['required', 'numeric', 'min:0', 'max:1'],
+            'page' => ['required', 'integer', 'min:1'],
+            'x' => ['required', 'numeric', 'min:0', 'max:1'],
+            'y' => ['required', 'numeric', 'min:0', 'max:1'],
+            'width' => ['required', 'numeric', 'min:0', 'max:1'],
             'height' => ['required', 'numeric', 'min:0', 'max:1'],
         ]);
 
@@ -171,7 +218,7 @@ class SuratController extends Controller
         ]);
 
         return redirect()
-            ->route('sekretaris.surat.show', $surat->id)
+            ->route('surat.index', ['open' => $surat->id])
             ->with('success', 'Posisi QR Code berhasil disimpan.');
     }
 }

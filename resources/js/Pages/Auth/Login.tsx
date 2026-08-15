@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useForm } from '@inertiajs/react';
-import AuthLayout from '../../Layouts/AuthLayout';
-import Input from '../../components/Forms/Input';
-import Label from '../../components/Forms/Label';
-import Checkbox from '../../components/Forms/Checkbox';
-import Button from '../../components/UI/Button';
+import { useForm, Link } from '@inertiajs/react';
+import GridShape from '../../components/common/GridShape';
+import ThemeTogglerTwo from '../../components/common/ThemeTogglerTwo';
+import { EyeCloseIcon, EyeIcon } from '../../icons';
 
 export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
@@ -20,83 +18,154 @@ export default function Login() {
         post(route('login.post'));
     };
 
-    const togglePasswordVisibility = (
-        <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-        >
-            {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
-            ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                </svg>
-            )}
-        </button>
-    );
-
     return (
-        <AuthLayout title="Masuk ke E-Surat" description="Silakan login menggunakan akun Anda">
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                    <Label htmlFor="email" value="Email" />
-                    <Input
-                        id="email"
-                        type="email"
-                        value={data.email}
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
-                        placeholder="nama@email.com"
-                    />
-                    {errors.email && (
-                        <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                    )}
-                </div>
+        <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
+            <div className="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900 sm:p-0">
+                
+                {/* Left Side: Login Form */}
+                <div className="flex flex-col flex-1">
+                    <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+                        <div>
+                            <div className="mb-5 sm:mb-8">
+                                <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
+                                    Sign In
+                                </h1>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Enter your email and password to sign in!
+                                </p>
+                            </div>
 
-                <div>
-                    <Label htmlFor="password" value="Password" />
-                    <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={data.password}
-                        onChange={(e) => setData('password', e.target.value)}
-                        required
-                        placeholder="••••••••"
-                        rightElement={togglePasswordVisibility}
-                    />
-                    {errors.password && (
-                        <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                    )}
-                </div>
+                            <form onSubmit={handleSubmit}>
+                                <div className="space-y-6">
+                                    {/* Email Field */}
+                                    <div>
+                                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-400">
+                                            Email <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={data.email}
+                                            onChange={(e) => setData('email', e.target.value)}
+                                            placeholder="info@gmail.com"
+                                            required
+                                            className="w-full h-11 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 bg-transparent border border-gray-300 rounded-lg outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder-gray-500 dark:focus:border-brand-500"
+                                        />
+                                        {errors.email && (
+                                            <p className="mt-1.5 text-xs text-red-500">{errors.email}</p>
+                                        )}
+                                    </div>
 
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <Checkbox
-                            id="remember-me"
-                            checked={data.remember}
-                            onChange={(e) => setData('remember', e.target.checked)}
-                        />
-                        <Label htmlFor="remember-me" className="ml-2 !mb-0 cursor-pointer">
-                            Ingat Saya
-                        </Label>
+                                    {/* Password Field */}
+                                    <div>
+                                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-400">
+                                            Password <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={data.password}
+                                                onChange={(e) => setData('password', e.target.value)}
+                                                placeholder="Enter your password"
+                                                required
+                                                className="w-full h-11 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 bg-transparent border border-gray-300 rounded-lg outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder-gray-500 dark:focus:border-brand-500"
+                                            />
+                                            <span
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                                            >
+                                                {showPassword ? (
+                                                    <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                                ) : (
+                                                    <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                                )}
+                                            </span>
+                                        </div>
+                                        {errors.password && (
+                                            <p className="mt-1.5 text-xs text-red-500">{errors.password}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Remember Me & Forgot Password */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                id="remember"
+                                                checked={data.remember}
+                                                onChange={(e) => setData('remember', e.target.checked)}
+                                                className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800"
+                                            />
+                                            <label
+                                                htmlFor="remember"
+                                                className="block text-sm font-normal text-gray-700 dark:text-gray-400 cursor-pointer"
+                                            >
+                                                Keep me logged in
+                                            </label>
+                                        </div>
+                                        <a
+                                            href="#"
+                                            className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium"
+                                        >
+                                            Forgot password?
+                                        </a>
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <div>
+                                        <button
+                                            type="submit"
+                                            disabled={processing}
+                                            className="flex items-center justify-center w-full h-11 px-4 py-2.5 text-sm font-medium text-white transition-colors bg-brand-500 rounded-lg hover:bg-brand-600 disabled:opacity-50"
+                                        >
+                                            {processing ? 'Memproses...' : 'Sign in'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            {/* Contact Admin Redirect to WhatsApp */}
+                            <div className="mt-5 text-center sm:text-start">
+                                <p className="text-sm font-normal text-gray-700 dark:text-gray-400">
+                                    Belum memiliki akun?{' '}
+                                    <a
+                                        href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20membuat%20akun%20E-Surat"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium transition-colors"
+                                    >
+                                        Hubungi Admin
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div className="text-sm">
-                        <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                            Lupa password?
-                        </a>
+                {/* Right Side: Split Screen Sidebar */}
+                <div className="items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid">
+                    <div className="relative flex items-center justify-center z-1">
+                        <GridShape />
+                        <div className="flex flex-col items-center max-w-xs">
+                            <Link href="/" className="block mb-4">
+                                <img
+                                    width={231}
+                                    height={48}
+                                    src="/images/logo/auth-logo.svg"
+                                    alt="Logo"
+                                />
+                            </Link>
+                            <p className="text-center text-gray-400 dark:text-white/60">
+                                Aplikasi Manajemen Surat dan Disposisi Digital E-Surat
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <Button type="submit" disabled={processing}>
-                    {processing ? 'Memproses...' : 'Masuk'}
-                </Button>
-            </form>
-        </AuthLayout>
+                {/* Theme Toggler */}
+                <div className="fixed z-50 hidden bottom-6 right-6 sm:block">
+                    <ThemeTogglerTwo />
+                </div>
+            </div>
+        </div>
     );
 }
-

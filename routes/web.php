@@ -16,29 +16,34 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 // Route yang dilindungi (harus login)
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {
-        return Inertia\Inertia::render('Dashboard'); // Nantinya bisa diganti menjadi halaman dashboard Inertia
+        $stats = [
+            'disetujui' => \App\Models\Surat::where('status', 'disetujui')->count(),
+            'menunggu_persetujuan' => \App\Models\Surat::where('status', 'menunggu_persetujuan')->count(),
+            'draft' => \App\Models\Surat::where('status', 'draft')->count(),
+            'ditolak' => \App\Models\Surat::where('status', 'ditolak')->count(),
+        ];
+        return Inertia\Inertia::render('Dashboard', [
+            'stats' => $stats
+        ]);
     })->name('dashboard');
 });
 
-// ── Sekretaris ──────────────────────────────────────────────────────────────
-Route::middleware(['auth', 'role:sekretaris'])
-    ->prefix('sekretaris')
-    ->name('sekretaris.')
-    ->group(function () {
-        // Resource surat: index, create, store, show
-        Route::resource('surat', SuratController::class)
-            ->only(['index', 'create', 'store', 'show']);
+// ── Surat ───────────────────────────────────────────────────────────────────
+Route::middleware(['auth'])->group(function () {
+    // Resource surat: index, create, store, show
+    Route::resource('surat', SuratController::class)
+        ->only(['index', 'create', 'store', 'show']);
 
-        // Preview PDF draft (stream file, protected)
-        Route::get('surat/{surat}/preview', [SuratController::class, 'previewFile'])
-            ->name('surat.preview');
+    // Preview PDF draft (stream file, protected)
+    Route::get('surat/{surat}/preview', [SuratController::class, 'previewFile'])
+        ->name('surat.preview');
 
-        // Placement Editor Save
-        Route::put('surat/{surat}/placement', [SuratController::class, 'updatePlacement'])
-            ->name('surat.placement.update');
+    // Placement Editor Save
+    Route::put('surat/{surat}/placement', [SuratController::class, 'updatePlacement'])
+        ->name('surat.placement.update');
 
-        // Ajukan surat ke approver
-        Route::post('surat/{surat}/submit', [SuratController::class, 'submit'])
-            ->name('surat.submit');
-    });
+    // Ajukan surat ke approver
+    Route::post('surat/{surat}/submit', [SuratController::class, 'submit'])
+        ->name('surat.submit');
+});
 

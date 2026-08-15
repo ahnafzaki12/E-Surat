@@ -6,6 +6,7 @@ import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import SpecimenQR from '../../components/common/SpecimenQR';
 
 // Set worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -596,27 +597,7 @@ export default function SuratShow() {
                                             }`}
                                     >
                                         {/* Specimen UI */}
-                                        <div className="w-full h-full flex flex-col pointer-events-none p-1 sm:p-2 border border-transparent">
-                                            <div className="flex gap-2 items-center h-full">
-                                                <div className="h-full aspect-square bg-gray-200 rounded flex items-center justify-center p-1 border border-gray-300">
-                                                    <svg className="w-full h-full text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex flex-col flex-1 justify-center min-w-0">
-                                                    <p className="text-[8px] sm:text-[10px] font-bold text-gray-800 truncate leading-tight">Ditandatangani secara elektronik</p>
-                                                    <p className="text-[6px] sm:text-[8px] text-gray-500 truncate mt-0.5">Oleh: Nama Approver</p>
-                                                    <p className="text-[6px] sm:text-[8px] text-gray-400 truncate mt-0.5">esurat.pissya.or.id</p>
-                                                </div>
-                                            </div>
-
-                                            {canSubmit && (
-                                                <>
-                                                    <div className="absolute inset-0 border-2 border-transparent group-hover:border-indigo-400/50 pointer-events-none transition-colors" />
-                                                    <div className="absolute right-0 bottom-0 w-3 h-3 bg-indigo-500 rounded-tl-sm opacity-0 group-hover:opacity-100 transition-opacity" style={{ cursor: 'nwse-resize' }} />
-                                                </>
-                                            )}
-                                        </div>
+                                        <SpecimenQR canSubmit={canSubmit} showResizeHandle={true} />
                                     </Rnd>
                                 )}
                             </div>

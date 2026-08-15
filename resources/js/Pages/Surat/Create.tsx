@@ -4,6 +4,7 @@ import AuthenticatedLayout from '../../Layouts/AuthenticatedLayout';
 import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import Badge from '../../components/ui/badge/Badge';
+import SpecimenQR from '../../components/common/SpecimenQR';
 import Label from '../../components/form/Label';
 import InputField from '../../components/form/input/InputField';
 import { Upload, FileText, ClipboardCheck, CheckCircle2, ChevronLeft, ArrowRight, Eye, Calendar, Building, Landmark, Sliders, ChevronRight } from 'lucide-react';
@@ -579,20 +580,7 @@ export default function SuratCreate() {
                                                         enableResizing={true}
                                                         className="absolute z-20 rounded shadow-md bg-white/90 overflow-hidden border-2 border-brand-500 cursor-move group select-none"
                                                     >
-                                                        <div className="w-full h-full flex flex-col pointer-events-none p-1 sm:p-2 border border-transparent">
-                                                            <div className="flex gap-2 items-center h-full">
-                                                                <div className="h-full aspect-square bg-gray-200 dark:bg-gray-800 rounded flex items-center justify-center p-1 border border-gray-300 dark:border-gray-700 shrink-0">
-                                                                    <svg className="w-full h-full text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div className="flex flex-col flex-1 justify-center min-w-0">
-                                                                    <p className="text-[8px] sm:text-[10px] font-bold text-gray-800 dark:text-white truncate leading-tight">Ditandatangani secara elektronik</p>
-                                                                    <p className="text-[6px] sm:text-[8px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">Oleh: Nama Approver</p>
-                                                                    <p className="text-[6px] sm:text-[8px] text-gray-400 dark:text-gray-500 truncate mt-0.5">esurat.pissya.or.id</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        <SpecimenQR canSubmit={true} />
                                                     </Rnd>
                                                 )}
                                             </div>

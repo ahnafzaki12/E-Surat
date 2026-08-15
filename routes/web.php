@@ -4,6 +4,10 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Sekretaris\SuratController;
 use Illuminate\Support\Facades\Route;
 
+// Verifikasi dan unduhan dokumen final bersifat publik; token tidak memuat ID surat.
+Route::get('/verify/{token}', [SuratController::class, 'verify'])->name('surat.verify');
+Route::get('/verify/{token}/download', [SuratController::class, 'downloadFinal'])->name('surat.verify.download');
+
 // Route untuk halaman login (hanya bisa diakses oleh tamu/guest)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -55,4 +59,3 @@ Route::middleware(['auth'])->group(function () {
     Route::post('surat/{surat}/reject', [SuratController::class, 'reject'])
         ->name('surat.reject');
 });
-

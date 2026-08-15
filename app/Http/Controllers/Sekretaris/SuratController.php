@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Sekretaris;
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalLog;
 use App\Models\JenisSurat;
+use App\Models\NomorSurat;
 use App\Models\Surat;
+use App\Services\FinalSuratPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SuratController extends Controller
@@ -147,12 +151,14 @@ class SuratController extends Controller
 
         $surat = $query->findOrFail($id);
 
-        $fileDraft = $surat->file_draft;
-        if (!$fileDraft || !isset($fileDraft['path'])) {
-            abort(404, 'File draft tidak ditemukan.');
+        $file = $surat->status === 'disetujui' && $surat->file_final
+            ? $surat->file_final
+            : $surat->file_draft;
+        if (!$file || !isset($file['path'])) {
+            abort(404, 'File surat tidak ditemukan.');
         }
 
-        $path = $fileDraft['path'];
+        $path = $file['path'];
 
         if (!Storage::disk('private')->exists($path)) {
             abort(404, 'File tidak ada di storage.');
@@ -162,7 +168,7 @@ class SuratController extends Controller
             echo Storage::disk('private')->get($path);
         }, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="preview.pdf"',
+            'Content-Disposition' => 'inline; filename="' . ($file['original_name'] ?? 'preview.pdf') . '"',
         ]);
     }
 
@@ -219,29 +225,125 @@ class SuratController extends Controller
     /**
      * Setujui surat.
      */
-    public function approve(string $id)
+    public function approve(string $id, FinalSuratPdfService $finalSuratPdfService)
     {
-        $surat = Surat::whereIn('status', ['menunggu_persetujuan'])
-            ->findOrFail($id);
+        abort_unless(strtolower((string) Auth::user()->role?->name) === 'approver', 403);
 
-        $surat->update([
-            'status' => 'disetujui',
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'catatan_penolakan' => null,
-        ]);
+        try {
+            DB::transaction(function () use ($id, $finalSuratPdfService) {
+                $surat = Surat::with('jenisSurat')
+                    ->where('status', 'menunggu_persetujuan')
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-        ApprovalLog::create([
-            'surat_id' => $surat->id,
-            'user_id' => Auth::id(),
-            'aksi' => 'disetujui',
-            'catatan' => null,
-            'created_at' => now(),
-        ]);
+                $approvedAt = now();
+                $year = (int) $surat->tanggal_surat->format('Y');
+                $counter = NomorSurat::where('jenis_surat_id', $surat->jenis_surat_id)
+                    ->where('tahun', $year)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$counter) {
+                    $counter = NomorSurat::create([
+                        'jenis_surat_id' => $surat->jenis_surat_id,
+                        'tahun' => $year,
+                        'last_number' => 0,
+                    ]);
+                }
+
+                $counter->increment('last_number');
+                $sequence = $counter->fresh()->last_number;
+                $nomorSurat = $this->formatNomorSurat($surat->jenisSurat, $sequence, $surat->tanggal_surat);
+                $token = Str::random(48);
+
+                $surat->update([
+                    'nomor_surat_id' => $counter->id,
+                    'nomor_surat_formatted' => $nomorSurat,
+                    'verification_token' => $token,
+                    'approved_by' => Auth::id(),
+                    'approved_at' => $approvedAt,
+                    'catatan_penolakan' => null,
+                ]);
+                $surat->load('approvedBy');
+
+                $fileFinal = $finalSuratPdfService->create($surat, route('surat.verify', $token));
+
+                $surat->update([
+                    'file_final' => $fileFinal,
+                    'file_hash' => hash_file('sha256', Storage::disk('private')->path($fileFinal['path'])),
+                    'status' => 'disetujui',
+                ]);
+
+                ApprovalLog::create([
+                    'surat_id' => $surat->id,
+                    'user_id' => Auth::id(),
+                    'aksi' => 'disetujui',
+                    'catatan' => null,
+                    'created_at' => now(),
+                ]);
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Surat gagal disetujui. PDF final tidak dapat dibuat.');
+        }
 
         return redirect()
-            ->route('surat.index', ['open' => $surat->id])
-            ->with('success', 'Surat berhasil disetujui.');
+            ->route('surat.index')
+            ->with('success', 'Surat berhasil disetujui dan PDF final telah dibuat.');
+    }
+
+    /** Halaman verifikasi publik dari QR Code. */
+    public function verify(string $token)
+    {
+        $surat = Surat::with(['jenisSurat', 'approvedBy'])
+            ->where('verification_token', $token)
+            ->where('status', 'disetujui')
+            ->firstOrFail();
+
+        return Inertia::render('Surat/Verify', [
+            'surat' => [
+                'nomor_surat_formatted' => $surat->nomor_surat_formatted,
+                'perihal' => $surat->perihal,
+                'tujuan_surat' => $surat->tujuan_surat,
+                'jenis_surat' => $surat->jenisSurat?->nama,
+                'approved_by' => $surat->approvedBy?->name,
+                'approved_at' => $surat->approved_at?->toIso8601String(),
+                'file_hash' => $surat->file_hash,
+                'download_url' => route('surat.verify.download', $surat->verification_token),
+            ],
+        ]);
+    }
+
+    /** Unduh PDF final melalui token verifikasi publik. */
+    public function downloadFinal(string $token)
+    {
+        $surat = Surat::where('verification_token', $token)
+            ->where('status', 'disetujui')
+            ->firstOrFail();
+        $file = $surat->file_final;
+
+        abort_unless(isset($file['path']) && Storage::disk('private')->exists($file['path']), 404);
+
+        return Storage::disk('private')->download(
+            $file['path'],
+            $file['original_name'] ?? 'surat-final.pdf',
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    private function formatNomorSurat(JenisSurat $jenisSurat, int $sequence, \Carbon\CarbonInterface $tanggalSurat): string
+    {
+        $month = $jenisSurat->pakai_bulan_romawi
+            ? $this->romanMonth((int) $tanggalSurat->format('n'))
+            : $tanggalSurat->format('m');
+
+        return "{$jenisSurat->kode}-{$sequence}/YA-PISSYA/{$month}/{$tanggalSurat->format('Y')}";
+    }
+
+    private function romanMonth(int $month): string
+    {
+        return ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][$month];
     }
 
     /**

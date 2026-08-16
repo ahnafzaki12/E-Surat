@@ -344,52 +344,54 @@ export default function SuratIndex() {
                 ) : activeLetter ? (
                     <div className="space-y-6 animate-in fade-in duration-200">
                         {/* Top Bar Detail (Back button, status, and actions) */}
-                        <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex items-center gap-3">
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                            <div className="flex items-start sm:items-center gap-3">
                                 <button
                                     onClick={closeDetailView}
-                                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition"
+                                    className="p-2 shrink-0 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-900/50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 transition mt-0.5 sm:mt-0"
                                     title="Kembali ke Daftar Surat"
                                 >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                                     </svg>
                                 </button>
-                                <div className="flex items-center gap-2.5">
-                                    <span className="text-base font-bold text-gray-900 dark:text-white">Detail Surat</span>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
-                                    <StatusBadge status={activeLetter.status} />
-                                    {activeLetter.nomor_surat_formatted && (
-                                        <span className="text-sm font-mono font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 px-3 py-1 rounded-lg">
-                                            {activeLetter.nomor_surat_formatted}
-                                        </span>
-                                    )}
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pt-1 sm:pt-0">
+                                    <h2 className="text-base font-bold text-gray-900 dark:text-white leading-none">Detail Surat</h2>
+                                    <span className="hidden sm:block w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <StatusBadge status={activeLetter.status} />
+                                        {activeLetter.nomor_surat_formatted && (
+                                            <span className="text-sm font-mono font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 leading-none">
+                                                {activeLetter.nomor_surat_formatted}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto pt-3 xl:pt-0 border-t border-gray-100 dark:border-gray-700 xl:border-0">
                                 {activeLetter.status === 'disetujui' && activeLetter.verification_token && (
                                     <a
                                         href={route('surat.verify.download', activeLetter.verification_token)}
-                                        className="flex items-center gap-2 px-4 py-1.5 text-[15px] font-semibold text-white bg-emerald-600 rounded-full hover:bg-emerald-500 transition-all"
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 sm:py-1.5 text-[14px] sm:text-[15px] font-semibold text-white bg-emerald-600 rounded-xl sm:rounded-full hover:bg-emerald-500 transition-all"
                                     >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
                                         </svg>
-                                        Download PDF Final
+                                        <span className="truncate">Download PDF Final</span>
                                     </a>
                                 )}
                                 {canSubmit && (
                                     <button
                                         onClick={handleSavePlacement}
                                         disabled={isSavingPlacement || renderedWidth === 0}
-                                        className="flex items-center gap-2 px-4 py-1.5 text-[15px] font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-700 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 sm:py-1.5 text-[14px] sm:text-[15px] font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-700 rounded-xl sm:rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                                     >
-                                        <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                        <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9" />
                                         </svg>
-                                        {isSavingPlacement ? 'Menyimpan...' : 'Simpan Posisi QR'}
+                                        <span className="truncate">{isSavingPlacement ? 'Menyimpan...' : 'Simpan Posisi QR'}</span>
                                     </button>
                                 )}
                                 {canSubmit && (
@@ -402,35 +404,35 @@ export default function SuratIndex() {
                                             setShowConfirm(true);
                                         }}
                                         disabled={!activeLetter.qr_position}
-                                        className={`flex items-center gap-2 px-4 py-1.5 text-[15px] font-semibold text-white bg-blue-600 rounded-full transition-all ${!activeLetter.qr_position ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}
+                                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 sm:py-1.5 text-[14px] sm:text-[15px] font-semibold text-white bg-blue-600 rounded-xl sm:rounded-full transition-all ${!activeLetter.qr_position ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-500'}`}
                                     >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                                         </svg>
-                                        {activeLetter.status === 'ditolak' ? 'Ajukan Ulang' : 'Ajukan ke Approver'}
+                                        <span className="truncate">{activeLetter.status === 'ditolak' ? 'Ajukan Ulang' : 'Ajukan ke Approver'}</span>
                                     </button>
                                 )}
                                 {isApprover && isWaiting && (
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex w-full sm:w-auto items-center gap-2">
                                         <button
                                             onClick={() => setShowRejectModal(true)}
                                             disabled={isApproving || isRejecting}
-                                            className="px-4 py-1.5 text-[15px] font-semibold text-gray-800 bg-white border-2 border-gray-100 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                            className="flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-[14px] sm:text-[15px] font-semibold text-gray-800 bg-white border-2 border-gray-100 rounded-xl sm:rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
                                         >
                                             Tolak
                                         </button>
                                         <button
                                             onClick={() => setShowApproveConfirm(true)}
                                             disabled={isApproving || isRejecting}
-                                            className="relative px-4 py-1.5 text-[15px] font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-500 transition-all disabled:opacity-50"
+                                            className="flex-1 sm:flex-none relative px-4 py-2 sm:py-1.5 text-[14px] sm:text-[15px] font-semibold text-white bg-blue-600 rounded-xl sm:rounded-full hover:bg-blue-500 transition-all disabled:opacity-50"
                                         >
                                             {isApproving ? (
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
                                                     </svg>
-                                                    Memproses...
+                                                    <span className="truncate">Memproses...</span>
                                                 </div>
                                             ) : (
                                                 "Setujui"
@@ -776,15 +778,16 @@ export default function SuratIndex() {
                                     const statusCfg = STATUS_MAPPING[surat.status];
 
                                     return (
-                                        <div key={surat.id} className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-white dark:bg-white/[0.02] shadow-sm flex flex-col gap-3">
+                                        <div 
+                                            key={surat.id} 
+                                            onClick={() => loadLetterDetails(surat.id)}
+                                            className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-white dark:bg-white/[0.02] shadow-sm flex flex-col gap-3 cursor-pointer hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-md transition-all active:scale-[0.99]"
+                                        >
                                             <div className="flex justify-between items-start gap-3">
                                                 <div className="min-w-0">
-                                                    <button
-                                                        onClick={() => loadLetterDetails(surat.id)}
-                                                        className="block font-semibold text-gray-800 dark:text-white/90 hover:text-blue-500 text-start cursor-pointer text-sm font-mono mb-1 truncate max-w-full"
-                                                    >
+                                                    <span className="block font-semibold text-gray-800 dark:text-white/90 text-start text-sm font-mono mb-1 truncate max-w-full">
                                                         {surat.nomor_surat_formatted || `SUR-${String(surat.id).padStart(5, '0')}`}
-                                                    </button>
+                                                    </span>
                                                     <span className="block font-medium text-gray-800 text-sm dark:text-white/90 text-start line-clamp-2">
                                                         {surat.perihal}
                                                     </span>
@@ -890,14 +893,15 @@ export default function SuratIndex() {
                                             const statusCfg = STATUS_MAPPING[surat.status];
 
                                             return (
-                                                <TableRow key={surat.id}>
+                                                <TableRow 
+                                                    key={surat.id}
+                                                    onClick={() => loadLetterDetails(surat.id)}
+                                                    className="cursor-pointer hover:bg-gray-50/80 dark:hover:bg-white/[0.03] transition-colors"
+                                                >
                                                     <TableCell className="py-3.5 font-semibold text-theme-sm font-mono text-start">
-                                                        <button
-                                                            onClick={() => loadLetterDetails(surat.id)}
-                                                            className="block font-semibold text-gray-800 dark:text-white/90 hover:text-blue-500 text-start cursor-pointer"
-                                                        >
+                                                        <span className="block font-semibold text-gray-800 dark:text-white/90 text-start group-hover:text-brand-500">
                                                             {surat.nomor_surat_formatted || `SUR-${String(surat.id).padStart(5, '0')}`}
-                                                        </button>
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell className="py-3.5">
                                                         <div className="flex items-start gap-3">

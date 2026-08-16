@@ -84,6 +84,22 @@ export default function SuratCreate() {
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [renderedWidth, setRenderedWidth] = useState<number>(0);
     const [renderedHeight, setRenderedHeight] = useState<number>(0);
+    const pdfWrapperRef = useRef<HTMLDivElement>(null);
+    const [pdfWidth, setPdfWidth] = useState<number>(450);
+
+    useEffect(() => {
+        const updateWidth = () => {
+            if (pdfWrapperRef.current) {
+                // p-4 = 16px * 2 = 32px
+                const wrapperWidth = pdfWrapperRef.current.clientWidth - 32;
+                setPdfWidth(Math.min(wrapperWidth, 450));
+            }
+        };
+
+        updateWidth();
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, [activeStep, pdfUrl]);
 
     // Specimen pixels state
     const [badgeState, setBadgeState] = useState({
@@ -474,7 +490,7 @@ export default function SuratCreate() {
                                         <button
                                             type="button"
                                             onClick={handleNextToStep2}
-                                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 bg-brand-500 hover:bg-brand-600"
+                                            className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 bg-brand-500 hover:bg-brand-600"
                                         >
                                             Atur Posisi TTD
                                             <ArrowRight className="w-4 h-4" />
@@ -538,7 +554,10 @@ export default function SuratCreate() {
                                         </div>
 
                                         {/* PDF Canvas Viewport */}
-                                        <div className="lg:col-span-8 flex justify-center bg-gray-50 dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 overflow-auto max-h-[500px]">
+                                        <div 
+                                            ref={pdfWrapperRef}
+                                            className="lg:col-span-8 flex justify-center bg-gray-50 dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 overflow-auto max-h-[500px]"
+                                        >
                                             <div className="relative shadow-sm bg-white dark:bg-gray-900" style={{ width: renderedWidth || 'auto', height: renderedHeight || 'auto' }}>
                                                 {pdfUrl && (
                                                     <Document
@@ -550,13 +569,13 @@ export default function SuratCreate() {
                                                             pageNumber={pageNumber}
                                                             onRenderSuccess={(page) => {
                                                                 const viewport = page.getViewport({ scale: 1 });
-                                                                const w = 450;
+                                                                const w = pdfWidth;
                                                                 const h = w * (viewport.height / viewport.width);
                                                                 setRenderedWidth(w);
                                                                 setRenderedHeight(h);
                                                                 updateBadgePixels(w, h, qrPosition.x, qrPosition.y, qrPosition.width, qrPosition.height);
                                                             }}
-                                                            width={450}
+                                                            width={pdfWidth}
                                                             renderTextLayer={false}
                                                             renderAnnotationLayer={false}
                                                             loading={<div className="p-8 text-sm text-gray-400">Merender halaman...</div>}
@@ -583,11 +602,11 @@ export default function SuratCreate() {
 
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-800">
+                                    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
                                         <button
                                             type="button"
                                             onClick={() => setActiveStep(1)}
-                                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-700 transition"
+                                            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-700 transition"
                                         >
                                             <ChevronLeft className="w-4 h-4" />
                                             Kembali
@@ -595,7 +614,7 @@ export default function SuratCreate() {
                                         <button
                                             type="button"
                                             onClick={handleNextToStep3}
-                                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 bg-brand-500 hover:bg-brand-600"
+                                            className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 bg-brand-500 hover:bg-brand-600"
                                         >
                                             Lanjut ke Ringkasan
                                             <ArrowRight className="w-4 h-4" />
@@ -677,12 +696,12 @@ export default function SuratCreate() {
                                     </div>
 
                                     {/* Action Buttons */}
-                                    <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-800">
+                                    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
                                         <button
                                             type="button"
                                             disabled={processing}
                                             onClick={() => setActiveStep(2)}
-                                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-700 transition disabled:opacity-50"
+                                            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-700 transition disabled:opacity-50"
                                         >
                                             <ChevronLeft className="w-4 h-4" />
                                             Kembali
@@ -692,7 +711,7 @@ export default function SuratCreate() {
                                             type="button"
                                             onClick={handleSubmit}
                                             disabled={processing}
-                                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-60 bg-brand-500 hover:bg-brand-600 disabled:cursor-not-allowed"
+                                            className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-60 bg-brand-500 hover:bg-brand-600 disabled:cursor-not-allowed"
                                         >
                                             {processing ? (
                                                 <>

@@ -440,7 +440,7 @@ export default function SuratCreate() {
                                             <DatePicker
                                                 id="tanggal_surat"
                                                 defaultDate={data.tanggal_surat}
-                                                onChange={(selectedDates, dateStr) => handleFieldChange('tanggal_surat', dateStr)}
+                                                onChange={(dateStr) => handleFieldChange('tanggal_surat', dateStr)}
                                                 placeholder="Pilih Tanggal Surat"
                                                 position="above"
                                             />

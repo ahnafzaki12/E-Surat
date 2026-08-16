@@ -62,7 +62,7 @@ export default function SuratCreate() {
     const [activeStep, setActiveStep] = useState(1);
     const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
 
-    const { data, setData, processing, errors, reset } = useForm<FormData>({
+    const { data, setData, processing, errors, reset, post } = useForm<FormData>({
         nomor_surat: '',
         jenis_surat_id: '',
         lembaga: '',
@@ -211,14 +211,8 @@ export default function SuratCreate() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Ensure latest coordinate state is saved
-        const finalData = {
-            ...data,
-            qr_position: qrPosition
-        };
-
-        // We temporarily set data and perform submit
-        router.post(route('surat.store'), finalData as any, {
+        // data.qr_position is already updated in handleNextToStep3
+        post(route('surat.store'), {
             forceFormData: true,
             onSuccess: () => {
                 setActiveStep(4);
@@ -440,7 +434,7 @@ export default function SuratCreate() {
                                             <DatePicker
                                                 id="tanggal_surat"
                                                 defaultDate={data.tanggal_surat}
-                                                onChange={(dateStr) => handleFieldChange('tanggal_surat', dateStr)}
+                                                onChange={(_dates, dateStr) => handleFieldChange('tanggal_surat', dateStr)}
                                                 placeholder="Pilih Tanggal Surat"
                                                 position="above"
                                             />

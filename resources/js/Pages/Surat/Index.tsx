@@ -370,6 +370,22 @@ export default function SuratIndex() {
     const [renderedWidth, setRenderedWidth] = useState<number>(0);
     const [renderedHeight, setRenderedHeight] = useState<number>(0);
     const pdfContainerRef = useRef<HTMLDivElement>(null);
+    const pdfWrapperRef = useRef<HTMLDivElement>(null);
+    const [pdfWidth, setPdfWidth] = useState<number>(500);
+
+    useEffect(() => {
+        const updateWidth = () => {
+            if (pdfWrapperRef.current) {
+                // padding 32px (p-4 = 16px * 2)
+                const wrapperWidth = pdfWrapperRef.current.clientWidth - 32;
+                setPdfWidth(Math.min(wrapperWidth, 500));
+            }
+        };
+
+        updateWidth();
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, [activeLetter]);
 
     // QR Placement Coordinates States
     const [qrPosition, setQrPosition] = useState({
@@ -805,7 +821,10 @@ export default function SuratIndex() {
                                 </div>
 
                                 {/* PDF wrapper inside container */}
-                                <div className="w-full bg-gray-100 dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-700 rounded-b-2xl shadow-inner flex justify-center overflow-auto max-h-[600px]">
+                                <div 
+                                    ref={pdfWrapperRef}
+                                    className="w-full bg-gray-100 dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-700 rounded-b-2xl shadow-inner flex justify-center overflow-auto max-h-[600px]"
+                                >
                                     <div
                                         ref={pdfContainerRef}
                                         className="relative bg-white shadow-xl overflow-hidden rounded-sm"
@@ -846,7 +865,7 @@ export default function SuratIndex() {
                                                     }}
                                                     renderTextLayer={false}
                                                     renderAnnotationLayer={false}
-                                                    width={500}
+                                                    width={pdfWidth}
                                                     className="border border-gray-200 dark:border-gray-700"
                                                 />
                                             )}
@@ -884,16 +903,16 @@ export default function SuratIndex() {
                 ) : (
                     /* ── Table Card ── */
                     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
-                        <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
                                     Daftar Surat Keluar/Masuk
                                 </h3>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                                 {/* Search bar */}
-                                <div className="relative">
+                                <div className="relative w-full sm:w-auto">
                                     <span className="absolute -translate-y-1/2 pointer-events-none left-3 top-1/2">
                                         <Search className="size-4 text-gray-500 dark:text-gray-400" />
                                     </span>
@@ -906,26 +925,29 @@ export default function SuratIndex() {
                                     />
                                 </div>
 
-                                {/* Filter Button */}
-                                <button
-                                    onClick={() => setIsFilterOpen(!isFilterOpen)}
-                                    className={`flex items-center justify-center gap-2 h-9 rounded-lg border border-gray-200 bg-transparent px-4 text-sm shadow-theme-xs hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:hover:bg-white/[0.05] transition-colors ${isFilterOpen
-                                        ? 'text-blue-600 border-blue-200 bg-blue-50/50 dark:text-blue-400 dark:border-blue-800/50'
-                                        : 'text-gray-850 dark:text-white/90'
-                                        }`}
-                                >
-                                    <SlidersHorizontal className="size-4" />
-                                    <span>Filter</span>
-                                </button>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    {/* Filter Button */}
+                                    <button
+                                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 h-9 rounded-lg border border-gray-200 bg-transparent px-4 text-sm shadow-theme-xs hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:hover:bg-white/[0.05] transition-colors ${isFilterOpen
+                                            ? 'text-blue-600 border-blue-200 bg-blue-50/50 dark:text-blue-400 dark:border-blue-800/50'
+                                            : 'text-gray-850 dark:text-white/90'
+                                            }`}
+                                    >
+                                        <SlidersHorizontal className="size-4" />
+                                        <span>Filter</span>
+                                    </button>
 
-                                {/* Upload Surat Button */}
-                                <button
-                                    onClick={() => router.visit(route('surat.create'))}
-                                    className="flex items-center justify-center gap-2 h-9 rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-4 text-sm font-medium transition-colors"
-                                >
-                                    <Plus className="size-4 text-white" />
-                                    <span>Upload Surat Baru</span>
-                                </button>
+                                    {/* Upload Surat Button */}
+                                    <button
+                                        onClick={() => router.visit(route('surat.create'))}
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-9 rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-4 text-sm font-medium transition-colors whitespace-nowrap"
+                                    >
+                                        <Plus className="size-4 text-white" />
+                                        <span className="hidden sm:inline">Upload Surat Baru</span>
+                                        <span className="sm:hidden">Upload</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -980,8 +1002,65 @@ export default function SuratIndex() {
                             </div>
                         </div>
 
-                        {/* Table View */}
-                        <div className="max-w-full overflow-x-auto">
+                        {/* Mobile Card View */}
+                        <div className="block md:hidden space-y-3">
+                            {filteredSurats.length > 0 ? (
+                                filteredSurats.map((surat) => {
+                                    const creator = surat.creator || surat.created_by_relation || surat.created_by_user || (user?.id === surat.created_by ? user : null);
+                                    const jenisSurat = surat.jenis_surat || surat.jenis_surat;
+                                    const dateStart = new Date(surat.tanggal_surat);
+                                    const formattedStartDay = dateStart.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+                                    const statusCfg = STATUS_MAPPING[surat.status];
+
+                                    return (
+                                        <div key={surat.id} className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-white dark:bg-white/[0.02] shadow-sm flex flex-col gap-3">
+                                            <div className="flex justify-between items-start gap-3">
+                                                <div className="min-w-0">
+                                                    <button
+                                                        onClick={() => loadLetterDetails(surat.id)}
+                                                        className="block font-semibold text-gray-800 dark:text-white/90 hover:text-blue-500 text-start cursor-pointer text-sm font-mono mb-1 truncate max-w-full"
+                                                    >
+                                                        {surat.nomor_surat_formatted || `SUR-${String(surat.id).padStart(5, '0')}`}
+                                                    </button>
+                                                    <span className="block font-medium text-gray-800 text-sm dark:text-white/90 text-start line-clamp-2">
+                                                        {surat.perihal}
+                                                    </span>
+                                                </div>
+                                                <Badge size="sm" color={statusCfg.color} className="shrink-0">
+                                                    {statusCfg.label}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
+                                                <div className="flex items-center gap-1.5">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                                    </svg>
+                                                    <span className="truncate max-w-[120px]">{creator?.name || 'Sekretaris'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 9v7.5m-9-5.25h.008v.008H12v-.008Z" />
+                                                    </svg>
+                                                    <span>{formattedStartDay}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 w-full">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800 dark:bg-white/5 dark:text-white/80">
+                                                        {jenisSurat?.nama ? jenisSurat.nama : '—'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="py-10 text-center text-gray-500">
+                                    Tidak ada surat ditemukan.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Table View (Desktop) */}
+                        <div className="hidden md:block max-w-full overflow-x-auto">
                             <Table>
                                 <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
                                     <TableRow>

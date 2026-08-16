@@ -236,32 +236,38 @@ class SuratController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($id);
 
-                $approvedAt = now();
-                $year = (int) $surat->tanggal_surat->format('Y');
-                $counter = NomorSurat::where('jenis_surat_id', $surat->jenis_surat_id)
-                    ->where('tahun', $year)
-                    ->lockForUpdate()
-                    ->first();
+                $nomorSurat = $surat->nomor_surat_formatted;
+                $nomorSuratId = $surat->nomor_surat_id;
 
-                if (!$counter) {
-                    $counter = NomorSurat::create([
-                        'jenis_surat_id' => $surat->jenis_surat_id,
-                        'tahun' => $year,
-                        'last_number' => 0,
-                    ]);
+                if (!$nomorSurat) {
+                    $year = (int) $surat->tanggal_surat->format('Y');
+                    $counter = NomorSurat::where('jenis_surat_id', $surat->jenis_surat_id)
+                        ->where('tahun', $year)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$counter) {
+                        $counter = NomorSurat::create([
+                            'jenis_surat_id' => $surat->jenis_surat_id,
+                            'tahun' => $year,
+                            'last_number' => 0,
+                        ]);
+                    }
+
+                    $counter->increment('last_number');
+                    $sequence = $counter->fresh()->last_number;
+                    $nomorSurat = $this->formatNomorSurat($surat->jenisSurat, $sequence, $surat->tanggal_surat);
+                    $nomorSuratId = $counter->id;
                 }
 
-                $counter->increment('last_number');
-                $sequence = $counter->fresh()->last_number;
-                $nomorSurat = $this->formatNomorSurat($surat->jenisSurat, $sequence, $surat->tanggal_surat);
                 $token = Str::random(48);
 
                 $surat->update([
-                    'nomor_surat_id' => $counter->id,
+                    'nomor_surat_id' => $nomorSuratId,
                     'nomor_surat_formatted' => $nomorSurat,
                     'verification_token' => $token,
                     'approved_by' => Auth::id(),
-                    'approved_at' => $approvedAt,
+                    'approved_at' => now(),
                     'catatan_penolakan' => null,
                 ]);
                 $surat->load('approvedBy');

@@ -331,8 +331,8 @@ class SuratController extends Controller
 
         abort_unless(isset($file['path']) && Storage::disk('private')->exists($file['path']), 404);
 
-        return Storage::disk('private')->download(
-            $file['path'],
+        return response()->download(
+            Storage::disk('private')->path($file['path']),
             $file['original_name'] ?? 'surat-final.pdf',
             ['Content-Type' => 'application/pdf']
         );

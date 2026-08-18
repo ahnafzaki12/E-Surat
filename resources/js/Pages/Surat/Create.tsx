@@ -30,7 +30,7 @@ interface JenisSurat {
 }
 
 interface PageProps {
-    auth: { user: { id: number; name: string; email: string; role?: { name: string } } };
+    auth: { user: { id: number; name: string; email: string; lembaga?: string; role?: { name: string } } };
     jenisSurats: JenisSurat[];
     errors?: Record<string, string>;
     [key: string]: unknown;
@@ -39,7 +39,6 @@ interface PageProps {
 type FormData = {
     nomor_surat: string;
     jenis_surat_id: string;
-    lembaga: string;
     perihal: string;
     tanggal_surat: string;
     file_draft: File | null;
@@ -58,14 +57,13 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export default function SuratCreate() {
-    const { jenisSurats } = usePage<PageProps>().props;
+    const { jenisSurats, auth } = usePage<PageProps>().props;
     const [activeStep, setActiveStep] = useState(1);
     const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
 
     const { data, setData, processing, errors, reset, post } = useForm<FormData>({
         nomor_surat: '',
         jenis_surat_id: '',
-        lembaga: '',
         perihal: '',
         tanggal_surat: '',
         file_draft: null,
@@ -205,7 +203,6 @@ export default function SuratCreate() {
         if (!data.file_draft) newErrors.file_draft = 'Dokumen PDF wajib diunggah.';
         if (!data.nomor_surat.trim()) newErrors.nomor_surat = 'Nomor Surat wajib diisi.';
         if (!data.jenis_surat_id) newErrors.jenis_surat_id = 'Jenis Surat wajib dipilih.';
-        if (!data.lembaga.trim()) newErrors.lembaga = 'Lembaga/Tujuan wajib diisi.';
         if (!data.perihal.trim()) newErrors.perihal = 'Perihal wajib diisi.';
         if (!data.tanggal_surat) newErrors.tanggal_surat = 'Tanggal Surat wajib diisi.';
 
@@ -457,20 +454,6 @@ export default function SuratCreate() {
                                             <FieldError message={localErrors.tanggal_surat || errors.tanggal_surat} />
                                         </div>
 
-                                        {/* Lembaga / Tujuan */}
-                                        <div className="md:col-span-2">
-                                            <Label htmlFor="lembaga">Lembaga / Tujuan <span className="text-red-500">*</span></Label>
-                                            <InputField
-                                                id="lembaga"
-                                                type="text"
-                                                value={data.lembaga}
-                                                onChange={(e) => handleFieldChange('lembaga', e.target.value)}
-                                                placeholder="Contoh: YAYASAN PONDOK PESANTREN ISLAMIYAH SYAFI'IYAH"
-                                                error={!!localErrors.lembaga || !!errors.lembaga}
-                                            />
-                                            <FieldError message={localErrors.lembaga || errors.lembaga} />
-                                        </div>
-
                                         {/* Perihal */}
                                         <div className="md:col-span-2">
                                             <Label htmlFor="perihal">Perihal <span className="text-red-500">*</span></Label>
@@ -671,12 +654,6 @@ export default function SuratCreate() {
                                                         year: 'numeric'
                                                     })}
                                                 </span>
-                                            </div>
-
-                                            {/* Lembaga */}
-                                            <div className="grid grid-cols-3 p-4">
-                                                <span className="text-xs sm:text-sm font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1.5"><Building className="w-4 h-4" /> Lembaga / Tujuan</span>
-                                                <span className="col-span-2 text-xs sm:text-sm font-semibold text-gray-855 dark:text-white leading-relaxed">{data.lembaga}</span>
                                             </div>
 
                                             {/* Perihal */}

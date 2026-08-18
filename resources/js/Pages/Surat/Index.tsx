@@ -15,7 +15,8 @@ import SpecimenQR from '../../components/common/SpecimenQR';
 import { StatusBadge, statusConfiguration as STATUS_MAPPING } from '../../components/surat/StatusBadge';
 import type { Surat as SuratDetail, SuratStatus } from '../../Types/surat';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import { SuratSortKey, useSuratFilters } from '../../hooks/useSuratFilters';
+import Pagination from '../../components/UI/pagination/Pagination';
+import { SuratSortKey, useSuratFilters } from '../../Hooks/useSuratFilters';
 
 // Set worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -586,7 +587,7 @@ export default function SuratIndex() {
                                 </div>
 
                                 {/* PDF wrapper inside container */}
-                                <div 
+                                <div
                                     ref={pdfWrapperRef}
                                     className="w-full bg-gray-100 dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-700 rounded-b-2xl shadow-inner flex justify-center overflow-auto max-h-[600px]"
                                 >
@@ -771,15 +772,14 @@ export default function SuratIndex() {
                         <div className="block md:hidden space-y-3">
                             {filteredSurats.length > 0 ? (
                                 filteredSurats.map((surat) => {
-                                    const creator = surat.creator || surat.created_by_relation || surat.created_by_user || (user?.id === surat.created_by ? user : null);
                                     const jenisSurat = surat.jenis_surat || surat.jenis_surat;
                                     const dateStart = new Date(surat.tanggal_surat);
                                     const formattedStartDay = dateStart.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
                                     const statusCfg = STATUS_MAPPING[surat.status];
 
                                     return (
-                                        <div 
-                                            key={surat.id} 
+                                        <div
+                                            key={surat.id}
                                             onClick={() => loadLetterDetails(surat.id)}
                                             className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-white dark:bg-white/[0.02] shadow-sm flex flex-col gap-3 cursor-pointer hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-md transition-all active:scale-[0.99]"
                                         >
@@ -799,9 +799,9 @@ export default function SuratIndex() {
                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
                                                 <div className="flex items-center gap-1.5">
                                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
                                                     </svg>
-                                                    <span className="truncate max-w-[120px]">{creator?.name || 'Sekretaris'}</span>
+                                                    <span className="truncate max-w-[120px]">{surat.tujuan_surat || '—'}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -882,7 +882,6 @@ export default function SuratIndex() {
                                     {filteredSurats.length > 0 ? (
                                         filteredSurats.map((surat) => {
                                             // Retrieve dynamic values based on E-Surat structure
-                                            const creator = surat.creator || surat.created_by_relation || surat.created_by_user || (user?.id === surat.created_by ? user : null);
                                             const jenisSurat = surat.jenis_surat || surat.jenis_surat;
                                             const dateStart = new Date(surat.tanggal_surat);
 
@@ -893,7 +892,7 @@ export default function SuratIndex() {
                                             const statusCfg = STATUS_MAPPING[surat.status];
 
                                             return (
-                                                <TableRow 
+                                                <TableRow
                                                     key={surat.id}
                                                     onClick={() => loadLetterDetails(surat.id)}
                                                     className="cursor-pointer hover:bg-gray-50/80 dark:hover:bg-white/[0.03] transition-colors"
@@ -910,7 +909,7 @@ export default function SuratIndex() {
                                                                     {surat.perihal}
                                                                 </span>
                                                                 <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                                                                    oleh {creator?.name || 'Sekretaris'}
+                                                                    oleh {surat.tujuan_surat || '—'}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -947,27 +946,24 @@ export default function SuratIndex() {
                         </div>
 
                         {/* Pagination */}
-                        {surats.last_page > 1 && (
-                            <div className="p-5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    Menampilkan Halaman {surats.current_page} dari {surats.last_page}
-                                </span>
-                                <div className="flex gap-1">
-                                    {surats.links.map((link, i) => (
-                                        <button
-                                            key={i}
-                                            disabled={!link.url}
-                                            onClick={() => link.url && router.visit(link.url)}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${link.active
-                                                ? 'bg-brand-500 text-white shadow-sm'
-                                                : !link.url
-                                                    ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
-                                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                }`}
-                                        />
-                                    ))}
-                                </div>
+                        {surats.total > 0 && (
+                            <div className="px-5 pb-5">
+                                <Pagination
+                                    currentPage={surats.current_page}
+                                    totalItems={surats.total}
+                                    itemsPerPage={surats.per_page}
+                                    onPageChange={(page) => {
+                                        const url = new URL(window.location.href);
+                                        url.searchParams.set('page', page.toString());
+                                        router.visit(url.toString(), { preserveScroll: true });
+                                    }}
+                                    onItemsPerPageChange={(perPage) => {
+                                        const url = new URL(window.location.href);
+                                        url.searchParams.set('per_page', perPage.toString());
+                                        url.searchParams.set('page', '1');
+                                        router.visit(url.toString(), { preserveScroll: true });
+                                    }}
+                                />
                             </div>
                         )}
                     </div>

@@ -8,7 +8,7 @@ import SpecimenQR from '../../components/common/SpecimenQR';
 import Label from '../../components/form/Label';
 import InputField from '../../components/form/input/InputField';
 import DatePicker from '../../components/form/date-picker';
-import { Upload, FileText, ClipboardCheck, CheckCircle2, ChevronLeft, ArrowRight, Eye, Calendar, Building, Landmark, Sliders, ChevronRight } from 'lucide-react';
+import { Upload, FileText, ClipboardCheck, CheckCircle2, ChevronLeft, ArrowRight, Eye, Calendar, Landmark, Sliders, ChevronRight } from 'lucide-react';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Rnd } from 'react-rnd';
 
@@ -57,7 +57,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export default function SuratCreate() {
-    const { jenisSurats, auth } = usePage<PageProps>().props;
+    const { jenisSurats } = usePage<PageProps>().props;
     const [activeStep, setActiveStep] = useState(1);
     const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
 
@@ -537,7 +537,7 @@ export default function SuratCreate() {
                                         </div>
 
                                         {/* PDF Canvas Viewport */}
-                                        <div 
+                                        <div
                                             ref={pdfWrapperRef}
                                             className="lg:col-span-8 flex justify-center bg-gray-50 dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 overflow-auto max-h-[500px]"
                                         >

@@ -190,6 +190,7 @@ export default function StationManagement() {
 
       <div className="space-y-6">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 mt-4">
+          {/* Header: Title + Search + Add Button */}
           <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
@@ -201,14 +202,14 @@ export default function StationManagement() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <LuSearch className="size-4" />
                 </span>
                 <input
                   type="text"
                   placeholder="Search stations..."
-                  className="pl-10 pr-4 py-3 text-sm rounded-xl border border-gray-200 bg-transparent outline-none focus:border-blue-500 dark:border-gray-800 dark:text-white transition-all w-full sm:w-64"
+                  className="pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-transparent outline-none focus:border-blue-500 dark:border-gray-800 dark:text-white transition-all w-full sm:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -218,14 +219,15 @@ export default function StationManagement() {
                 size="sm"
                 startIcon={<LuPlus className="size-5" />}
                 onClick={() => handleOpenModal()}
-                className="rounded-xl shadow-lg shadow-brand-500/20"
+                className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
               >
                 Add Station
               </Button>
             </div>
           </div>
 
-          <div className="max-w-full overflow-x-auto">
+          {/* ── Desktop Table (lg+) ── */}
+          <div className="hidden lg:block max-w-full overflow-x-auto">
             <Table>
               <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
                 <TableRow>
@@ -297,6 +299,57 @@ export default function StationManagement() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* ── Tablet & Mobile Card Layout (< lg) ── */}
+          <div className="lg:hidden">
+            {filteredAndSortedStations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {filteredAndSortedStations.map((item) => (
+                  <div
+                    key={item.lemb_id}
+                    className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] p-4 hover:border-gray-200 dark:hover:border-gray-700 transition-colors"
+                  >
+                    {/* Icon */}
+                    <div className="flex items-center justify-center size-10 rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 shrink-0">
+                      <LuMapPin className="size-5" />
+                    </div>
+
+                    {/* Name + ID */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 dark:text-white/90 text-sm truncate">
+                        {item.lemb_name}
+                      </p>
+                      <p className="text-gray-400 dark:text-gray-500 text-xs">
+                        ID #{item.lemb_id}
+                      </p>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => handleOpenModal(item)}
+                        className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                        title="Edit Station"
+                      >
+                        <LuPencil className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.lemb_id)}
+                        className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                        title="Delete Station"
+                      >
+                        <LuTrash2 className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-14 text-center text-gray-400 dark:text-gray-500 text-sm">
+                No stations found.
+              </div>
+            )}
           </div>
         </div>
       </div>

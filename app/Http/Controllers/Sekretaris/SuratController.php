@@ -3,14 +3,19 @@
 namespace App\Http\Controllers\Sekretaris;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SuratDiajukanMail;
+use App\Mail\SuratDisetujuiMail;
+use App\Mail\SuratDitolakMail;
 use App\Models\ApprovalLog;
 use App\Models\JenisSurat;
 use App\Models\NomorSurat;
 use App\Models\Surat;
+use App\Models\User;
 use App\Services\FinalSuratPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -106,6 +111,14 @@ class SuratController extends Controller
             'created_at' => now(),
         ]);
 
+        $approvers = User::whereHas('role', function ($query) {
+            $query->where('name', 'approver');
+        })->get();
+
+        foreach ($approvers as $approver) {
+            Mail::to($approver->email)->send(new SuratDiajukanMail($surat));
+        }
+
         return redirect()
             ->back()
             ->with('success', 'Surat berhasil diajukan.');
@@ -191,6 +204,14 @@ class SuratController extends Controller
             'catatan' => null,
             'created_at' => now(),
         ]);
+
+        $approvers = User::whereHas('role', function ($query) {
+            $query->where('name', 'approver');
+        })->get();
+
+        foreach ($approvers as $approver) {
+            Mail::to($approver->email)->send(new SuratDiajukanMail($surat));
+        }
 
         return redirect()
             ->route('surat.index', ['open' => $surat->id])
@@ -287,6 +308,11 @@ class SuratController extends Controller
                     'catatan' => null,
                     'created_at' => now(),
                 ]);
+
+                $surat->load('createdBy');
+                if ($surat->createdBy && $surat->createdBy->email) {
+                    Mail::to($surat->createdBy->email)->send(new SuratDisetujuiMail($surat));
+                }
             });
         } catch (\Throwable $exception) {
             report($exception);
@@ -378,6 +404,11 @@ class SuratController extends Controller
             'catatan' => $validated['catatan_penolakan'],
             'created_at' => now(),
         ]);
+
+        $surat->load('createdBy');
+        if ($surat->createdBy && $surat->createdBy->email) {
+            Mail::to($surat->createdBy->email)->send(new SuratDitolakMail($surat, $validated['catatan_penolakan']));
+        }
 
         return redirect()
             ->route('surat.index', ['open' => $surat->id])

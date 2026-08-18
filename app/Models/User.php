@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
+        'lemb_id',
         'phone',
         'status',
     ];
@@ -53,5 +54,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function lembaga()
+    {
+        return $this->belongsTo(Lembaga::class, 'lemb_id', 'lemb_id');
     }
 }

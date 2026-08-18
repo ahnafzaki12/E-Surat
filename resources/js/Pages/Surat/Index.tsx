@@ -13,9 +13,9 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import SpecimenQR from '../../components/common/SpecimenQR';
 import { StatusBadge, statusConfiguration as STATUS_MAPPING } from '../../components/surat/StatusBadge';
-import { useSuratFilters, type SuratSortKey } from '../../Hooks/useSuratFilters';
 import type { Surat as SuratDetail, SuratStatus } from '../../Types/surat';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { SuratSortKey, useSuratFilters } from '../../hooks/useSuratFilters';
 
 // Set worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(

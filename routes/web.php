@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Sekretaris\SuratController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\JenisSuratController;
+use App\Http\Controllers\LembagaController;
 use Illuminate\Support\Facades\Route;
 
 // Verifikasi dan unduhan dokumen final bersifat publik; token tidak memuat ID surat.
@@ -38,6 +42,12 @@ Route::middleware(['auth'])->group(function () {
     // surat.show digunakan sebagai JSON API endpoint oleh Index panel (bukan halaman terpisah)
     Route::resource('surat', SuratController::class)
         ->only(['index', 'create', 'store', 'show']);
+
+    // System Setting Routes
+    Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class);
+    Route::resource('classifications', JenisSuratController::class);
+    Route::resource('stations', LembagaController::class);
 
     // Preview PDF draft (stream file, protected)
     Route::get('surat/{surat}/preview', [SuratController::class, 'previewFile'])

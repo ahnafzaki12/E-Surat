@@ -37,7 +37,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         if ($user) {
-            $user->loadMissing('role');
+            $user->loadMissing(['role', 'lembaga']);
         }
 
         return [
@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                     'name'    => $user->name,
                     'email'   => $user->email,
                     'role_id' => $user->role_id,
+                    'lembaga' => $user->lembaga ? $user->lembaga->lemb_name : '',
                     'role'    => $user->role ? [
                         'name' => $user->role->name,
                     ] : null,

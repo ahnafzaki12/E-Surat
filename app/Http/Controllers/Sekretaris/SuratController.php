@@ -23,8 +23,15 @@ use Inertia\Inertia;
 class SuratController extends Controller
 {
     /**
-     * Daftar surat milik sekretaris yang sedang login.
+     * Cek apakah user adalah sekretaris yayasan (lemb_name = 'Yayasan').
      */
+    private function isSekretarisYayasan(): bool
+    {
+        $user = Auth::user();
+        return $user->role?->name === 'sekretaris'
+            && $user->lembaga?->lemb_name === 'Yayasan';
+    }
+
     public function index()
     {
         $query = Surat::with(['jenisSurat', 'createdBy', 'approvedBy']);
@@ -32,7 +39,10 @@ class SuratController extends Controller
         $role = Auth::user()->role?->name;
 
         if ($role === 'sekretaris') {
-            $query->where('created_by', Auth::id());
+            // Sekretaris Yayasan bisa lihat semua surat dari semua lembaga
+            if (!$this->isSekretarisYayasan()) {
+                $query->where('created_by', Auth::id());
+            }
         } elseif ($role === 'approver') {
             $query->whereIn('status', ['menunggu_persetujuan', 'disetujui', 'ditolak']);
         }
@@ -64,7 +74,6 @@ class SuratController extends Controller
         $validated = $request->validate([
             'nomor_surat' => ['nullable', 'string', 'max:255'],
             'jenis_surat_id' => ['required', 'exists:jenis_surats,id'],
-            'lembaga' => ['nullable', 'string', 'max:255'], // Placeholder for when ERD is updated
             'perihal' => ['required', 'string', 'max:255'],
             'tanggal_surat' => ['required', 'date'],
             'file_draft' => ['required', 'file', 'mimes:pdf', 'max:10240'], // max 10MB
@@ -89,7 +98,7 @@ class SuratController extends Controller
             'nomor_surat_formatted' => $validated['nomor_surat'] ?? null,
             'jenis_surat_id' => $validated['jenis_surat_id'],
             'perihal' => $validated['perihal'],
-            'tujuan_surat' => $validated['lembaga'] ?? '-',
+            'tujuan_surat' => Auth::user()->lembaga ? Auth::user()->lembaga->lemb_name : '-',
             'tanggal_surat' => $validated['tanggal_surat'],
             'file_draft' => [
                 'path' => $storagePath,
@@ -134,7 +143,10 @@ class SuratController extends Controller
         $role = Auth::user()->role?->name;
 
         if ($role === 'sekretaris') {
-            $query->where('created_by', Auth::id());
+            // Sekretaris Yayasan bisa lihat detail semua surat
+            if (!$this->isSekretarisYayasan()) {
+                $query->where('created_by', Auth::id());
+            }
         } elseif ($role === 'approver') {
             $query->whereIn('status', ['menunggu_persetujuan', 'disetujui', 'ditolak']);
         }
@@ -157,7 +169,10 @@ class SuratController extends Controller
         $role = Auth::user()->role?->name;
 
         if ($role === 'sekretaris') {
-            $query->where('created_by', Auth::id());
+            // Sekretaris Yayasan bisa preview semua surat
+            if (!$this->isSekretarisYayasan()) {
+                $query->where('created_by', Auth::id());
+            }
         } elseif ($role === 'approver') {
             $query->whereIn('status', ['menunggu_persetujuan', 'disetujui', 'ditolak']);
         }

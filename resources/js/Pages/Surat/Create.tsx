@@ -3,7 +3,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import AuthenticatedLayout from '../../Layouts/AuthenticatedLayout';
 import PageMeta from '../../components/common/PageMeta';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
-import Badge from '../../components/ui/badge/Badge';
+import Badge from '../../components/UI/badge/Badge';
 import SpecimenQR from '../../components/common/SpecimenQR';
 import Label from '../../components/form/Label';
 import InputField from '../../components/form/input/InputField';
@@ -26,8 +26,6 @@ interface JenisSurat {
     id: number;
     kode: string;
     nama: string;
-    kategori: string;
-    qr_position_default: Record<string, any> | null;
 }
 
 interface PageProps {
@@ -51,6 +49,8 @@ type FormData = {
         height: number;
     } | null;
 };
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function FieldError({ message }: { message?: string }) {
     if (!message) return null;
@@ -124,8 +124,8 @@ export default function SuratCreate() {
             alert('Hanya file PDF yang diizinkan.');
             return;
         }
-        if (file.size > 10 * 1024 * 1024) {
-            alert('Ukuran file tidak boleh melebihi 10 MB.');
+        if (file.size > MAX_FILE_SIZE) {
+            alert('Ukuran file tidak boleh melebihi 5 MB.');
             return;
         }
         setData('file_draft', file);
@@ -145,24 +145,6 @@ export default function SuratCreate() {
             });
         }
     };
-
-    // Initialize Default QR Position when Jenis Surat is selected
-    useEffect(() => {
-        if (data.jenis_surat_id) {
-            const selected = jenisSurats.find(js => js.id.toString() === data.jenis_surat_id);
-            if (selected && selected.qr_position_default) {
-                const def = selected.qr_position_default;
-                setQrPosition({
-                    page: def.page || 1,
-                    x: def.x ?? 0.59,
-                    y: def.y ?? 0.81,
-                    width: def.width ?? 0.32,
-                    height: def.height ?? 0.07
-                });
-                setPageNumber(def.page || 1);
-            }
-        }
-    }, [data.jenis_surat_id, jenisSurats]);
 
     // Handle updates of rendered page size
     const updateBadgePixels = useCallback((dispW: number, dispH: number, x: number, y: number, w: number, h: number) => {
@@ -393,7 +375,7 @@ export default function SuratCreate() {
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-gray-750 dark:text-gray-300 text-sm">Tarik & lepas file PDF surat di sini</p>
-                                                    <p className="text-xs text-gray-400 mt-0.5">atau klik untuk memilih file · Maks. 10 MB</p>
+                                                    <p className="text-xs text-gray-400 mt-0.5">atau klik untuk memilih file · Maks. 5 MB</p>
                                                 </div>
                                             </div>
                                         )}

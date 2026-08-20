@@ -37,7 +37,6 @@
                                 <tr>
                                     <td style="padding: 20px;">
                                         <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Perihal:</strong> {{ $surat->perihal }}</p>
-                                        <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Tujuan Surat:</strong> {{ $surat->tujuan_surat }}</p>
                                         <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Nomor Surat:</strong> {{ $surat->nomor_surat_formatted }}</p>
                                         <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Disetujui Oleh:</strong> {{ $surat->approvedBy->name ?? 'Approver' }}</p>
                                         <p style="margin: 0; font-size: 15px; color: #374151;"><strong>Waktu Disetujui:</strong> {{ $surat->approved_at ? \Carbon\Carbon::parse($surat->approved_at)->translatedFormat('d F Y, H:i') : '-' }}</p>

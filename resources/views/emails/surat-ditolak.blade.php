@@ -37,7 +37,6 @@
                                 <tr>
                                     <td style="padding: 20px;">
                                         <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Perihal:</strong> {{ $surat->perihal }}</p>
-                                        <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Tujuan Surat:</strong> {{ $surat->tujuan_surat }}</p>
                                         <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Tanggal Surat:</strong> {{ \Carbon\Carbon::parse($surat->tanggal_surat)->translatedFormat('d F Y') }}</p>
                                         <p style="margin: 0; font-size: 15px; color: #374151;"><strong>Ditolak Oleh:</strong> {{ $surat->approvedBy->name ?? 'Approver' }}</p>
                                     </td>

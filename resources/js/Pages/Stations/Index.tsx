@@ -2,11 +2,11 @@ import { useState, useMemo } from "react";
 import { usePage, useForm, router } from "@inertiajs/react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import Button from "../../components/ui/button/Button";
+import Button from "../../components/UI/button/Button";
 import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/ui/table";
-import { Modal } from "../../components/ui/modal";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/UI/table";
+import { Modal } from "../../components/UI/modal";
 import {
   Plus as LuPlus,
   Pencil as LuPencil,
@@ -17,7 +17,7 @@ import {
   ArrowDown as LuArrowDown,
   MapPin as LuMapPin,
 } from "lucide-react";
-import { showToast, showAlert, showConfirm } from "../../utils/notifications";
+import { showToast, showAlert, showConfirm } from "../../Utils/notifications";
 import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
 
 interface Station {
@@ -31,7 +31,12 @@ type SortConfig = {
 };
 
 export default function StationManagement() {
-  const { stations } = usePage<{ stations: Station[] }>().props;
+  const { stations, auth } = usePage<{ stations: Station[], auth: any }>().props;
+  const userPermissions = auth?.user?.role?.permissions || [];
+  
+  const canCreate = userPermissions.includes('stations.create');
+  const canEdit = userPermissions.includes('stations.edit');
+  const canDelete = userPermissions.includes('stations.delete');
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "lemb_id",
@@ -214,15 +219,17 @@ export default function StationManagement() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                startIcon={<LuPlus className="size-5" />}
-                onClick={() => handleOpenModal()}
-                className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
-              >
-                Add Station
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  startIcon={<LuPlus className="size-5" />}
+                  onClick={() => handleOpenModal()}
+                  className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
+                >
+                  Add Station
+                </Button>
+              )}
             </div>
           </div>
 
@@ -272,20 +279,24 @@ export default function StationManagement() {
                       </TableCell>
                       <TableCell className="py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenModal(item)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                            title="Edit Station"
-                          >
-                            <LuPencil className="size-4.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.lemb_id)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                            title="Delete Station"
-                          >
-                            <LuTrash2 className="size-4.5" />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleOpenModal(item)}
+                              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                              title="Edit Station"
+                            >
+                              <LuPencil className="size-4.5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(item.lemb_id)}
+                              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                              title="Delete Station"
+                            >
+                              <LuTrash2 className="size-4.5" />
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -327,20 +338,24 @@ export default function StationManagement() {
 
                     {/* Action buttons */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => handleOpenModal(item)}
-                        className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                        title="Edit Station"
-                      >
-                        <LuPencil className="size-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.lemb_id)}
-                        className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                        title="Delete Station"
-                      >
-                        <LuTrash2 className="size-4" />
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => handleOpenModal(item)}
+                          className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                          title="Edit Station"
+                        >
+                          <LuPencil className="size-4" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(item.lemb_id)}
+                          className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                          title="Delete Station"
+                        >
+                          <LuTrash2 className="size-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

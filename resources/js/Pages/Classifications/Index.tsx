@@ -2,11 +2,11 @@ import { useState, useMemo } from "react";
 import { usePage, useForm, router } from "@inertiajs/react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import Button from "../../components/ui/button/Button";
+import Button from "../../components/UI/button/Button";
 import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/ui/table";
-import { Modal } from "../../components/ui/modal";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/UI/table";
+import { Modal } from "../../components/UI/modal";
 import {
   Plus as LuPlus,
   Pencil as LuPencil,
@@ -17,11 +17,12 @@ import {
   ArrowDown as LuArrowDown,
   Tag as LuTag,
 } from "lucide-react";
-import { showToast, showAlert, showConfirm } from "../../utils/notifications";
+import { showToast, showAlert, showConfirm } from "../../Utils/notifications";
 import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
 
 interface Classification {
   id: number;
+  kode: string;
   nama: string;
   deskripsi: string | null;
 }
@@ -32,10 +33,15 @@ type SortConfig = {
 };
 
 export default function ClassificationManagement() {
-  const { classifications } = usePage<{ classifications: Classification[] }>().props;
+  const { classifications, auth } = usePage<{ classifications: Classification[], auth: any }>().props;
+  const userPermissions = auth?.user?.role?.permissions || [];
+  
+  const canCreate = userPermissions.includes('classifications.create');
+  const canEdit = userPermissions.includes('classifications.edit');
+  const canDelete = userPermissions.includes('classifications.delete');
   
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "id",
+    key: "kode",
     direction: "asc",
   });
 
@@ -44,6 +50,7 @@ export default function ClassificationManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   
   const { data, setData, post, put, processing, reset, clearErrors } = useForm({
+    kode: "",
     nama: "",
     deskripsi: "",
   });
@@ -68,8 +75,8 @@ export default function ClassificationManagement() {
       result = result.filter(
         (item) =>
           item.nama.toLowerCase().includes(term) ||
-          (item.deskripsi && item.deskripsi.toLowerCase().includes(term)) ||
-          String(item.id).includes(term)
+          item.kode.toLowerCase().includes(term) ||
+          (item.deskripsi && item.deskripsi.toLowerCase().includes(term))
       );
     }
 
@@ -101,6 +108,7 @@ export default function ClassificationManagement() {
     if (classification) {
       setEditingId(classification.id);
       setData({
+        kode: classification.kode,
         nama: classification.nama,
         deskripsi: classification.deskripsi || "",
       });
@@ -113,12 +121,13 @@ export default function ClassificationManagement() {
 
   const handleSubmit = async () => {
     const missing = [];
+    if (!data.kode.trim()) missing.push("kode");
     if (!data.nama.trim()) missing.push("nama");
 
     setMissingFields(missing);
 
     if (missing.length > 0) {
-      showAlert("error", "Validation Error", "Please fill in the classification name.");
+      showAlert("error", "Validation Error", "Please fill in the classification code and name.");
       return;
     }
 
@@ -205,47 +214,50 @@ export default function ClassificationManagement() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <LuSearch className="size-4" />
                 </span>
                 <input
                   type="text"
-                  placeholder="Search classifications..."
-                  className="pl-10 pr-4 py-3 text-sm rounded-xl border border-gray-200 bg-transparent outline-none focus:border-blue-500 dark:border-gray-800 dark:text-white transition-all w-full sm:w-64"
+                  placeholder="Search code or classification..."
+                  className="pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-transparent outline-none focus:border-blue-500 dark:border-gray-800 dark:text-white transition-all w-full sm:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                startIcon={<LuPlus className="size-5" />}
-                onClick={() => handleOpenModal()}
-                className="rounded-xl shadow-lg shadow-brand-500/20"
-              >
-                Add Classification
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  startIcon={<LuPlus className="size-5" />}
+                  onClick={() => handleOpenModal()}
+                  className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
+                >
+                  Add Classification
+                </Button>
+              )}
             </div>
           </div>
 
-          <div className="max-w-full overflow-x-auto">
+          {/* Desktop Table (lg+) */}
+          <div className="hidden lg:block max-w-full overflow-x-auto">
             <Table>
               <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
                 <TableRow>
                   <TableCell
                     isHeader
-                    className="w-[12%] py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                    onClick={() => handleSort("id")}
+                    className="w-[18%] py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                    onClick={() => handleSort("kode")}
                   >
                     <div className="flex items-center">
-                      ID
-                      {getSortIcon("id")}
+                      Kode Jenis Surat
+                      {getSortIcon("kode")}
                     </div>
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="w-[38%] py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                    className="w-[32%] py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]"
                     onClick={() => handleSort("nama")}
                   >
                     <div className="flex items-center">
@@ -277,7 +289,7 @@ export default function ClassificationManagement() {
                   filteredAndSortedClassifications.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="py-4 text-gray-500 text-theme-sm dark:text-gray-400">
-                        {item.id}
+                        {item.kode}
                       </TableCell>
                       <TableCell className="py-4 text-gray-800 font-medium text-theme-sm dark:text-white/90">
                         {item.nama}
@@ -287,20 +299,24 @@ export default function ClassificationManagement() {
                       </TableCell>
                       <TableCell className="py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenModal(item)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                            title="Edit Classification"
-                          >
-                            <LuPencil className="size-4.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                            title="Delete Classification"
-                          >
-                            <LuTrash2 className="size-4.5" />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleOpenModal(item)}
+                              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                              title="Edit Classification"
+                            >
+                              <LuPencil className="size-4.5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                              title="Delete Classification"
+                            >
+                              <LuTrash2 className="size-4.5" />
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -314,6 +330,71 @@ export default function ClassificationManagement() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Tablet & Mobile Card Layout (< lg) */}
+          <div className="lg:hidden">
+            {filteredAndSortedClassifications.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {filteredAndSortedClassifications.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] p-4 hover:border-gray-200 dark:hover:border-gray-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center size-10 rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 shrink-0">
+                        <LuTag className="size-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 dark:text-white/90 text-sm truncate">
+                          {item.nama}
+                        </p>
+                        <p className="text-gray-400 dark:text-gray-500 text-xs truncate">
+                          Kode: {item.kode}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {canEdit && (
+                          <button
+                            onClick={() => handleOpenModal(item)}
+                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                            title="Edit Classification"
+                          >
+                            <LuPencil className="size-4" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                            title="Delete Classification"
+                          >
+                            <LuTrash2 className="size-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                      {item.deskripsi ? (
+                        <>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Description</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                            {item.deskripsi}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">No description</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-14 text-center text-gray-400 dark:text-gray-500 text-sm">
+                No classifications found.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -342,6 +423,16 @@ export default function ClassificationManagement() {
 
           <div className="px-6 py-6 lg:px-8 lg:py-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
             <div className="space-y-4">
+              <div>
+                <Label>Kode Jenis Surat</Label>
+                <Input
+                  placeholder="Contoh: A.1"
+                  value={data.kode}
+                  onChange={(e) => setData("kode", e.target.value)}
+                  className="mt-1.5"
+                  error={missingFields.includes("kode")}
+                />
+              </div>
               <div>
                 <Label>Classification Name</Label>
                 <Input

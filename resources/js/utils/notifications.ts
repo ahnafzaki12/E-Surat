@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import ConfirmModal from '../components/ui/modal/ConfirmModal';
+import ConfirmModal from '../components/UI/modal/ConfirmModal';
 
 /**
  * Toast notification for quick feedback

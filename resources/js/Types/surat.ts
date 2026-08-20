@@ -10,8 +10,6 @@ export interface JenisSurat {
     id: number;
     kode: string;
     nama: string;
-    kategori: string;
-    qr_position_default?: QrPosition | null;
 }
 
 export interface QrPosition {

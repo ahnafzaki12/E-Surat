@@ -12,7 +12,6 @@ interface UseSuratFiltersOptions {
     data: Surat[];
     searchQuery: string;
     status: SuratStatus | 'all';
-    category: string;
 }
 
 const valueForSort = (surat: Surat, key: SuratSortKey): string => {
@@ -21,7 +20,7 @@ const valueForSort = (surat: Surat, key: SuratSortKey): string => {
     return String(surat[key] ?? '');
 };
 
-export function useSuratFilters({ data, searchQuery, status, category }: UseSuratFiltersOptions) {
+export function useSuratFilters({ data, searchQuery, status }: UseSuratFiltersOptions) {
     const [sortConfig, setSortConfig] = useState<SuratSortConfig>({
         key: 'tanggal_surat',
         direction: 'desc',
@@ -31,7 +30,6 @@ export function useSuratFilters({ data, searchQuery, status, category }: UseSura
         const normalizedQuery = searchQuery.trim().toLowerCase();
         const results = data.filter((surat) => {
             const matchesStatus = status === 'all' || surat.status === status;
-            const matchesCategory = category === 'all' || surat.jenis_surat?.kategori === category;
             const matchesQuery = !normalizedQuery || [
                 surat.perihal,
                 surat.tujuan_surat,
@@ -39,7 +37,7 @@ export function useSuratFilters({ data, searchQuery, status, category }: UseSura
                 surat.jenis_surat?.nama ?? '',
             ].some((value) => value.toLowerCase().includes(normalizedQuery));
 
-            return matchesStatus && matchesCategory && matchesQuery;
+            return matchesStatus && matchesQuery;
         });
 
         if (!sortConfig.direction) return results;
@@ -53,7 +51,7 @@ export function useSuratFilters({ data, searchQuery, status, category }: UseSura
 
             return sortConfig.direction === 'asc' ? comparison : -comparison;
         });
-    }, [category, data, searchQuery, sortConfig, status]);
+    }, [data, searchQuery, sortConfig, status]);
 
     const toggleSort = (key: SuratSortKey) => {
         setSortConfig((current) => ({

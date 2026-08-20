@@ -6,12 +6,12 @@ import {
   TableCell,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import Pagination from "../../components/ui/pagination/Pagination";
-import Badge from "../../components/ui/badge/Badge";
+} from "../../components/UI/table";
+import Pagination from "../../components/UI/pagination/Pagination";
+import Badge from "../../components/UI/badge/Badge";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { showToast, showConfirm, showAlert } from "../../utils/notifications";
+import { showToast, showConfirm, showAlert } from "../../Utils/notifications";
 import {
   ArrowUpDown as LuArrowUpDown,
   ArrowUp as LuArrowUp,
@@ -22,8 +22,8 @@ import {
   User as LuUser,
   Search as LuSearch,
 } from "lucide-react";
-import Button from "../../components/ui/button/Button";
-import { Modal } from "../../components/ui/modal";
+import Button from "../../components/UI/button/Button";
+import { Modal } from "../../components/UI/modal";
 import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
 import Select from "../../components/form/Select";
@@ -55,7 +55,12 @@ type SortConfig = {
 };
 
 export default function UserManagement() {
-  const { users, roles, stations } = usePage<{ users: User[], roles: Role[], stations: Station[] }>().props;
+  const { users, roles, stations, auth } = usePage<{ users: User[], roles: Role[], stations: Station[], auth: any }>().props;
+  const userPermissions = auth?.user?.role?.permissions || [];
+  
+  const canCreate = userPermissions.includes('users.create');
+  const canEdit = userPermissions.includes('users.edit');
+  const canDelete = userPermissions.includes('users.delete');
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "role_id",
@@ -289,15 +294,17 @@ export default function UserManagement() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                startIcon={<LuPlus className="size-5" />}
-                onClick={() => handleOpenModal()}
-                className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
-              >
-                Add User
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  startIcon={<LuPlus className="size-5" />}
+                  onClick={() => handleOpenModal()}
+                  className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
+                >
+                  Add User
+                </Button>
+              )}
             </div>
           </div>
 
@@ -389,20 +396,24 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell className="py-3">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenModal(user)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                            title="Edit User"
-                          >
-                            <LuPencil className="size-4.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user.id)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                            title="Delete User"
-                          >
-                            <LuTrash2 className="size-4.5" />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleOpenModal(user)}
+                              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                              title="Edit User"
+                            >
+                              <LuPencil className="size-4.5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(user.id)}
+                              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                              title="Delete User"
+                            >
+                              <LuTrash2 className="size-4.5" />
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -444,20 +455,24 @@ export default function UserManagement() {
                       </div>
                       {/* Action buttons */}
                       <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => handleOpenModal(user)}
-                          className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                          title="Edit User"
-                        >
-                          <LuPencil className="size-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id)}
-                          className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                          title="Delete User"
-                        >
-                          <LuTrash2 className="size-4" />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleOpenModal(user)}
+                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                            title="Edit User"
+                          >
+                            <LuPencil className="size-4" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                            title="Delete User"
+                          >
+                            <LuTrash2 className="size-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
 

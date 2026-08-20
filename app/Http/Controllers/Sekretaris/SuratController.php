@@ -28,8 +28,7 @@ class SuratController extends Controller
     private function isSekretarisYayasan(): bool
     {
         $user = Auth::user();
-        return $user->role?->name === 'sekretaris'
-            && $user->lembaga?->lemb_name === 'Yayasan';
+        return $user->role?->name === 'sekretaris_yayasan';
     }
 
     public function index()
@@ -38,7 +37,7 @@ class SuratController extends Controller
 
         $role = Auth::user()->role?->name;
 
-        if ($role === 'sekretaris') {
+        if (in_array($role, ['sekretaris_yayasan', 'sekretaris_lembaga'])) {
             // Sekretaris Yayasan bisa lihat semua surat dari semua lembaga
             if (!$this->isSekretarisYayasan()) {
                 $query->where('created_by', Auth::id());
@@ -59,7 +58,7 @@ class SuratController extends Controller
      */
     public function create()
     {
-        $jenisSurats = JenisSurat::orderBy('kode')->get(['id', 'kode', 'nama', 'kategori', 'qr_position_default']);
+        $jenisSurats = JenisSurat::orderBy('kode')->get(['id', 'kode', 'nama']);
 
         return Inertia::render('Surat/Create', [
             'jenisSurats' => $jenisSurats,
@@ -142,7 +141,7 @@ class SuratController extends Controller
 
         $role = Auth::user()->role?->name;
 
-        if ($role === 'sekretaris') {
+        if (in_array($role, ['sekretaris_yayasan', 'sekretaris_lembaga'])) {
             // Sekretaris Yayasan bisa lihat detail semua surat
             if (!$this->isSekretarisYayasan()) {
                 $query->where('created_by', Auth::id());
@@ -153,10 +152,10 @@ class SuratController extends Controller
 
         $surat = $query->findOrFail($id);
 
-        // Always return JSON (used by Index panel via fetch)
-        return response()->json([
+        // Render Inertia Show page
+        return Inertia::render('Surat/Show', [
             'surat'      => $surat,
-            'previewUrl' => route('surat.preview', $surat->id),
+            'previewUrl' => route('surat.preview', $surat->id) . '?t=' . time(),
         ]);
     }
 
@@ -168,7 +167,7 @@ class SuratController extends Controller
         $query = Surat::query();
         $role = Auth::user()->role?->name;
 
-        if ($role === 'sekretaris') {
+        if (in_array($role, ['sekretaris_yayasan', 'sekretaris_lembaga'])) {
             // Sekretaris Yayasan bisa preview semua surat
             if (!$this->isSekretarisYayasan()) {
                 $query->where('created_by', Auth::id());
@@ -208,7 +207,7 @@ class SuratController extends Controller
         $query = Surat::query();
         $role = Auth::user()->role?->name;
 
-        if ($role === 'sekretaris') {
+        if (in_array($role, ['sekretaris_yayasan', 'sekretaris_lembaga'])) {
             if (!$this->isSekretarisYayasan()) {
                 $query->where('created_by', Auth::id());
             }
@@ -239,7 +238,7 @@ class SuratController extends Controller
         }
 
         return redirect()
-            ->route('surat.index', ['open' => $surat->id])
+            ->route('surat.show', $surat->id)
             ->with('success', 'Surat berhasil diajukan untuk persetujuan.');
     }
     /**
@@ -250,7 +249,7 @@ class SuratController extends Controller
         $query = Surat::query();
         $role = Auth::user()->role?->name;
 
-        if ($role === 'sekretaris') {
+        if (in_array($role, ['sekretaris_yayasan', 'sekretaris_lembaga'])) {
             if (!$this->isSekretarisYayasan()) {
                 $query->where('created_by', Auth::id());
             }
@@ -272,7 +271,7 @@ class SuratController extends Controller
         ]);
 
         return redirect()
-            ->route('surat.index', ['open' => $surat->id])
+            ->route('surat.show', $surat->id)
             ->with('success', 'Posisi QR Code berhasil disimpan.');
     }
 
@@ -354,7 +353,7 @@ class SuratController extends Controller
         }
 
         return redirect()
-            ->route('surat.index')
+            ->route('surat.show', $id)
             ->with('success', 'Surat berhasil disetujui dan PDF final telah dibuat.');
     }
 
@@ -399,9 +398,7 @@ class SuratController extends Controller
 
     private function formatNomorSurat(JenisSurat $jenisSurat, int $sequence, \Carbon\CarbonInterface $tanggalSurat): string
     {
-        $month = $jenisSurat->pakai_bulan_romawi
-            ? $this->romanMonth((int) $tanggalSurat->format('n'))
-            : $tanggalSurat->format('m');
+        $month = $this->romanMonth((int) $tanggalSurat->format('n'));
 
         return "{$jenisSurat->kode}-{$sequence}/YA-PISSYA/{$month}/{$tanggalSurat->format('Y')}";
     }
@@ -409,6 +406,59 @@ class SuratController extends Controller
     private function romanMonth(int $month): string
     {
         return ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][$month];
+    }
+
+    /**
+     * Ganti file draft surat yang ditolak.
+     */
+    public function replaceFileDraft(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'file_draft' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        $query = Surat::query();
+        $role = Auth::user()->role?->name;
+
+        if (in_array($role, ['sekretaris_yayasan', 'sekretaris_lembaga'])) {
+            if (!$this->isSekretarisYayasan()) {
+                $query->where('created_by', Auth::id());
+            }
+        } else {
+            abort(403);
+        }
+
+        $surat = $query->where('status', 'ditolak')->findOrFail($id);
+
+        // Hapus file lama dari storage
+        if ($surat->file_draft && isset($surat->file_draft['path'])) {
+            Storage::disk('private')->delete($surat->file_draft['path']);
+        }
+
+        // Simpan file baru
+        $file = $request->file('file_draft');
+        $originalName = $file->getClientOriginalName();
+        $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $storagePath = $file->storeAs(
+            'drafts/' . Auth::id(),
+            $fileName,
+            'private'
+        );
+
+        $surat->update([
+            'file_draft' => [
+                'path' => $storagePath,
+                'original_name' => $originalName,
+                'size' => $file->getSize(),
+                'mime' => 'application/pdf',
+            ],
+            // Reset posisi QR supaya user atur ulang setelah file baru diupload
+            'qr_position' => null,
+        ]);
+
+        return redirect()
+            ->route('surat.show', $surat->id)
+            ->with('success', 'File draft berhasil diganti. Silakan atur posisi QR Code dan ajukan ulang.');
     }
 
     /**
@@ -444,7 +494,7 @@ class SuratController extends Controller
         }
 
         return redirect()
-            ->route('surat.index', ['open' => $surat->id])
+            ->route('surat.show', $surat->id)
             ->with('success', 'Surat telah ditolak.');
     }
 }

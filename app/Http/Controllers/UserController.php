@@ -4,14 +4,25 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Lembaga;
 use Illuminate\Support\Facades\Hash;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:users.index', only: ['index']),
+            new Middleware('permission:users.create', only: ['store']),
+            new Middleware('permission:users.edit', only: ['update']),
+            new Middleware('permission:users.delete', only: ['destroy']),
+        ];
+    }
     public function index()
     {
         return Inertia::render('Users/Index', [

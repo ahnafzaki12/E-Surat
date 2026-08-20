@@ -11,15 +11,7 @@ class JenisSurat extends Model
     protected $fillable = [
         'kode',
         'nama',
-        'kategori',
-        'pakai_bulan_romawi',
         'deskripsi',
-        'qr_position_default',
-    ];
-
-    protected $casts = [
-        'pakai_bulan_romawi' => 'boolean',
-        'qr_position_default' => 'array',
     ];
 
     /**

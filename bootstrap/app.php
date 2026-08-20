@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias untuk role-based access control
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
 
         // Redirect tamu/guest ke halaman login jika belum terautentikasi

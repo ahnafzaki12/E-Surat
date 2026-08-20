@@ -37,11 +37,15 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         if ($user) {
-            $user->loadMissing(['role', 'lembaga']);
+            $user->loadMissing(['role.permissions', 'lembaga']);
         }
 
         return [
             ...parent::share($request),
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error'   => fn () => $request->session()->get('error'),
+            ],
             'auth' => [
                 'user' => $user ? [
                     'id'      => $user->id,
@@ -51,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                     'lembaga' => $user->lembaga ? $user->lembaga->lemb_name : '',
                     'role'    => $user->role ? [
                         'name' => $user->role->name,
+                        'permissions' => $user->role->permissions->pluck('key'),
                     ] : null,
                 ] : null,
             ],

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { Link as InertiaLink } from "@inertiajs/react";
+import { Link as InertiaLink, usePage } from "@inertiajs/react";
 
 import {
   BoxCubeIcon,
@@ -20,6 +20,7 @@ type NavItem = {
   icon: React.ReactNode;
   path?: string;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  permission?: string;
 };
 
 const navItems: NavItem[] = [
@@ -27,40 +28,47 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/",
+    permission: "dashboard.view",
   },
   {
     icon: <ListIcon />,
     name: "Daftar Surat",
     path: "/surat",
+    permission: "surat.index",
   },
 ];
 
 const systemItems: NavItem[] = [
   {
     icon: <UserIcon />,
-    name: "User Management",
+    name: "Manajemen Pengguna",
     path: "/users",
+    permission: "users.index",
   },
   {
     icon: <BoxCubeIcon />,
-    name: "Classifications",
+    name: "Jenis Surat",
     path: "/classifications",
+    permission: "classifications.index",
   },
   {
     icon: <LockIcon />,
-    name: "Roles",
+    name: "Peran",
     path: "/roles",
+    permission: "roles.index",
   },
   {
     icon: <PlugInIcon />,
-    name: "Stations",
+    name: "Lembaga",
     path: "/stations",
+    permission: "stations.index",
   },
 ];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const { auth } = usePage<any>().props;
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "system";
@@ -71,7 +79,18 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => location.pathname === path;
+  const userPermissions = auth?.user?.role?.permissions || [];
+  const isAdmin = auth?.user?.role?.name === 'admin';
+
+  const hasPermission = (permission?: string) => {
+    if (isAdmin) return true;
+    if (!permission) return true;
+    return userPermissions.includes(permission);
+  };
+
+  const filteredNavItems = navItems.filter((item) => hasPermission(item.permission));
+  const filteredSystemItems = systemItems.filter((item) => hasPermission(item.permission));
+
   const isActive = useCallback(
     (path: string) => {
       if (path === "/") {
@@ -85,7 +104,7 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     let submenuMatched = false;
     ["main", "system"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : systemItems;
+      const items = menuType === "main" ? filteredNavItems : filteredSystemItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -139,8 +158,8 @@ const AppSidebar: React.FC = () => {
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item group ${openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
+                ? "menu-item-active"
+                : "menu-item-inactive"
                 } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
@@ -148,8 +167,8 @@ const AppSidebar: React.FC = () => {
             >
               <span
                 className={`menu-item-icon-size  ${openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
+                  ? "menu-item-icon-active"
+                  : "menu-item-icon-inactive"
                   }`}
               >
                 {nav.icon}
@@ -160,9 +179,9 @@ const AppSidebar: React.FC = () => {
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
-                      openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
+                    openSubmenu?.index === index
+                    ? "rotate-180 text-brand-500"
+                    : ""
                     }`}
                 />
               )}
@@ -179,8 +198,8 @@ const AppSidebar: React.FC = () => {
                   <>
                     <span
                       className={`menu-item-icon-size ${isActive(nav.path)
-                          ? "menu-item-icon-active"
-                          : "menu-item-icon-inactive"
+                        ? "menu-item-icon-active"
+                        : "menu-item-icon-inactive"
                         }`}
                     >
                       {nav.icon}
@@ -222,8 +241,8 @@ const AppSidebar: React.FC = () => {
                     <Link
                       to={subItem.path}
                       className={`menu-dropdown-item ${isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
+                        ? "menu-dropdown-item-active"
+                        : "menu-dropdown-item-inactive"
                         }`}
                     >
                       {subItem.name}
@@ -231,8 +250,8 @@ const AppSidebar: React.FC = () => {
                         {subItem.new && (
                           <span
                             className={`ml-auto ${isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
                               } menu-dropdown-badge`}
                           >
                             new
@@ -241,8 +260,8 @@ const AppSidebar: React.FC = () => {
                         {subItem.pro && (
                           <span
                             className={`ml-auto ${isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
                               } menu-dropdown-badge`}
                           >
                             pro
@@ -309,36 +328,40 @@ const AppSidebar: React.FC = () => {
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
+            {filteredNavItems.length > 0 && (
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"
-                  }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <HorizontaLDots className="size-6" />
-                )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </div>
-            <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
+                    }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "Menu"
+                  ) : (
+                    <HorizontaLDots className="size-6" />
+                  )}
+                </h2>
+                {renderMenuItems(filteredNavItems, "main")}
+              </div>
+            )}
+            {filteredSystemItems.length > 0 && (
+              <div className="">
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"
-                  }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "System"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(systemItems, "system")}
-            </div>
+                    }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "Sistem"
+                  ) : (
+                    <HorizontaLDots />
+                  )}
+                </h2>
+                {renderMenuItems(filteredSystemItems, "system")}
+              </div>
+            )}
           </div>
         </nav>
         {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}

@@ -1,4 +1,4 @@
-import Badge from '../ui/badge/Badge';
+import Badge from '../UI/badge/Badge';
 import type { SuratStatus } from '../../Types/surat';
 
 const statusConfiguration: Record<SuratStatus, { label: string; color: 'light' | 'warning' | 'error' | 'success' }> = {

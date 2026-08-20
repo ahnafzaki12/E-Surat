@@ -5,6 +5,8 @@ import AppHeader from "../layout/AppHeader";
 import Backdrop from "../layout/Backdrop";
 import AppSidebar from "../layout/AppSidebar";
 
+import UnauthorizedModal from "../components/UI/modal/UnauthorizedModal";
+
 interface AuthenticatedLayoutProps {
   children: ReactNode;
 }
@@ -28,6 +30,7 @@ const LayoutContent: React.FC<{ children: ReactNode }> = ({ children }) => {
           {children}
         </div>
       </div>
+      <UnauthorizedModal />
     </div>
   );
 };

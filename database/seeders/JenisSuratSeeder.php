@@ -16,14 +16,14 @@ class JenisSuratSeeder extends Seeder
     {
         $now = now();
         $jenisSurats = [
-            ['kode' => 'A.1', 'nama' => 'Surat Keputusan', 'kategori' => 'umum', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Keputusan', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'A.2', 'nama' => 'Surat Undangan', 'kategori' => 'umum', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Undangan', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'A.3', 'nama' => 'Surat Permohonan', 'kategori' => 'umum', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Permohonan', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'A.4', 'nama' => 'Surat Pemberitahuan', 'kategori' => 'umum', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Pemberitahuan', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'A.5', 'nama' => 'Surat Pengantar', 'kategori' => 'umum', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Pengantar', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'A.6', 'nama' => 'Surat Mandat/Tugas', 'kategori' => 'umum', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Mandat/Tugas', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'B.1', 'nama' => 'Surat Keterangan', 'kategori' => 'khusus', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Keterangan', 'created_at' => $now, 'updated_at' => $now],
-            ['kode' => 'B.2', 'nama' => 'Surat Rekomendasi', 'kategori' => 'khusus', 'pakai_bulan_romawi' => true, 'deskripsi' => 'Surat Rekomendasi', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'A.1', 'nama' => 'Surat Keputusan', 'deskripsi' => 'Surat Keputusan', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'A.2', 'nama' => 'Surat Undangan', 'deskripsi' => 'Surat Undangan', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'A.3', 'nama' => 'Surat Permohonan', 'deskripsi' => 'Surat Permohonan', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'A.4', 'nama' => 'Surat Pemberitahuan', 'deskripsi' => 'Surat Pemberitahuan', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'A.5', 'nama' => 'Surat Pengantar', 'deskripsi' => 'Surat Pengantar', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'A.6', 'nama' => 'Surat Mandat/Tugas', 'deskripsi' => 'Surat Mandat/Tugas', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'B.1', 'nama' => 'Surat Keterangan', 'deskripsi' => 'Surat Keterangan', 'created_at' => $now, 'updated_at' => $now],
+            ['kode' => 'B.2', 'nama' => 'Surat Rekomendasi', 'deskripsi' => 'Surat Rekomendasi', 'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('jenis_surats')->insert($jenisSurats);

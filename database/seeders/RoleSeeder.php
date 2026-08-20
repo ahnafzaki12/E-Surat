@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-
-use Illuminate\Support\Facades\DB;
+use App\Models\Role;
+use App\Models\Permission;
 
 class RoleSeeder extends Seeder
 {
@@ -14,13 +13,46 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = now();
-        $roles = [
-            ['name' => 'sekretaris', 'description' => 'Sekretaris pembuat surat', 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'approver', 'description' => 'Penyetuju surat (Gus)', 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'admin', 'description' => 'Administrator sistem', 'created_at' => $now, 'updated_at' => $now],
-        ];
+        // Sekretaris Yayasan
+        $sekretarisYayasan = Role::firstOrCreate(
+            ['name' => 'sekretaris_yayasan'],
+            ['description' => 'Sekretaris pembuat surat tingkat yayasan']
+        );
+        $sekretarisYayasan->permissions()->sync(
+            Permission::where('key', '!=', 'surat.approve')->pluck('id')
+        );
 
-        DB::table('roles')->insert($roles);
+        // Sekretaris Lembaga
+        $sekretarisLembaga = Role::firstOrCreate(
+            ['name' => 'sekretaris_lembaga'],
+            ['description' => 'Sekretaris pembuat surat tingkat lembaga']
+        );
+        $sekretarisLembaga->permissions()->sync(
+            Permission::whereIn('key', [
+                'surat.index', 'surat.create', 'surat.show', 'surat.preview',
+                'surat.placement', 'surat.submit', 'surat.replace-file'
+            ])->pluck('id')
+        );
+
+        // Approver (Gus)
+        $approver = Role::firstOrCreate(
+            ['name' => 'approver'],
+            ['description' => 'Penyetuju surat (Gus)']
+        );
+        $approver->permissions()->sync(
+            Permission::whereIn('key', [
+                'dashboard.view', 'surat.index', 'surat.show', 'surat.preview', 'surat.approve'
+            ])->pluck('id')
+        );
+
+        // Admin
+        $admin = Role::firstOrCreate(
+            ['name' => 'admin'],
+            ['description' => 'Administrator sistem']
+        );
+        // Jika ada permission yang eksklusif selain approve, bisa dikecualikan. Admin diasumsikan tidak approve surat
+        $admin->permissions()->sync(
+            Permission::where('key', '!=', 'surat.approve')->pluck('id')
+        );
     }
 }

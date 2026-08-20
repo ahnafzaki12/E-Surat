@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $sekretarisRole = DB::table('roles')->where('name', 'sekretaris')->first();
+        $sekretarisRole = DB::table('roles')->where('name', 'sekretaris_yayasan')->first();
         $approverRole   = DB::table('roles')->where('name', 'approver')->first();
         $adminRole      = DB::table('roles')->where('name', 'admin')->first();
 

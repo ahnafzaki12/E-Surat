@@ -80,18 +80,20 @@ export default function ConfirmDialog({
                     }
                 `}</style>
 
-                {/* Icon square — top-left aligned, matching reference design */}
-                <div
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center mb-5 ${iconBgClass}`}
-                    style={iconBgStyle}
-                >
-                    {icon}
-                </div>
+                <div className="flex items-center gap-4 mb-3">
+                    {/* Icon square */}
+                    <div
+                        className={`w-12 h-12 shrink-0 rounded-lg flex items-center justify-center ${iconBgClass}`}
+                        style={iconBgStyle}
+                    >
+                        {icon}
+                    </div>
 
-                {/* Title */}
-                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1.5 leading-snug">
-                    {title}
-                </h3>
+                    {/* Title */}
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-snug">
+                        {title}
+                    </h3>
+                </div>
 
                 {/* Description */}
                 {description && (

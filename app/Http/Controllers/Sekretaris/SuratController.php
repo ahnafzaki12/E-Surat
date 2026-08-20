@@ -205,8 +205,18 @@ class SuratController extends Controller
      */
     public function submit(string $id)
     {
-        $surat = Surat::where('created_by', Auth::id())
-            ->whereIn('status', ['draft', 'ditolak'])
+        $query = Surat::query();
+        $role = Auth::user()->role?->name;
+
+        if ($role === 'sekretaris') {
+            if (!$this->isSekretarisYayasan()) {
+                $query->where('created_by', Auth::id());
+            }
+        } elseif ($role === 'approver') {
+            abort(403);
+        }
+
+        $surat = $query->whereIn('status', ['draft', 'ditolak'])
             ->findOrFail($id);
 
         $surat->update(['status' => 'menunggu_persetujuan']);
@@ -237,8 +247,16 @@ class SuratController extends Controller
      */
     public function updatePlacement(Request $request, string $id)
     {
-        $surat = Surat::where('created_by', Auth::id())
-            ->whereIn('status', ['draft', 'ditolak'])
+        $query = Surat::query();
+        $role = Auth::user()->role?->name;
+
+        if ($role === 'sekretaris') {
+            if (!$this->isSekretarisYayasan()) {
+                $query->where('created_by', Auth::id());
+            }
+        }
+
+        $surat = $query->whereIn('status', ['draft', 'ditolak'])
             ->findOrFail($id);
 
         $validated = $request->validate([

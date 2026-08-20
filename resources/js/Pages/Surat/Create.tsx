@@ -8,6 +8,7 @@ import SpecimenQR from '../../components/common/SpecimenQR';
 import Label from '../../components/form/Label';
 import InputField from '../../components/form/input/InputField';
 import DatePicker from '../../components/form/date-picker';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { Upload, FileText, ClipboardCheck, CheckCircle2, ChevronLeft, ArrowRight, Eye, Calendar, Landmark, Sliders, ChevronRight } from 'lucide-react';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Rnd } from 'react-rnd';
@@ -60,6 +61,7 @@ export default function SuratCreate() {
     const { jenisSurats } = usePage<PageProps>().props;
     const [activeStep, setActiveStep] = useState(1);
     const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const { data, setData, processing, errors, reset, post } = useForm<FormData>({
         nomor_surat: '',
@@ -221,8 +223,8 @@ export default function SuratCreate() {
         setActiveStep(3);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
 
         // data.qr_position is already updated in handleNextToStep3
         post(route('surat.store'), {
@@ -291,14 +293,14 @@ export default function SuratCreate() {
 
                     <div className="relative">
                         {/* Connecting Line */}
-                        <div className="absolute top-6 left-[12%] right-[12%] h-[2px] bg-gray-200 dark:bg-gray-800 hidden md:block z-0">
+                        <div className="absolute top-5 sm:top-6 left-[12%] right-[12%] h-[2px] bg-gray-200 dark:bg-gray-800 z-0">
                             <div
                                 className="absolute top-0 left-0 h-full bg-brand-500 transition-all duration-500"
                                 style={{ width: `${Math.max(0, (activeStep - 1) * 33.33)}%` }}
                             ></div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
+                        <div className="grid grid-cols-4 gap-2 sm:gap-6 relative z-10">
                             {stepperItems.map((item) => {
                                 const isCompleted = item.step < activeStep;
                                 const isCurrent = item.step === activeStep;
@@ -314,10 +316,10 @@ export default function SuratCreate() {
 
                                 return (
                                     <div key={item.step} className="flex flex-col items-center text-center">
-                                        <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold mb-3 shadow-sm relative z-10 transition-all duration-300 ${nodeClasses}`}>
-                                            {item.icon}
+                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center font-bold mb-2 sm:mb-3 shadow-sm relative z-10 transition-all duration-300 ${nodeClasses}`}>
+                                            <div className="scale-75 sm:scale-100">{item.icon}</div>
                                         </div>
-                                        <h4 className="text-gray-900 dark:text-white font-semibold text-sm mb-1">
+                                        <h4 className="text-gray-900 dark:text-white font-semibold text-[11px] sm:text-sm mb-1 leading-tight sm:leading-normal">
                                             {item.title}
                                         </h4>
                                         <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed max-w-[160px] hidden md:block">
@@ -573,7 +575,6 @@ export default function SuratCreate() {
                                                         onDragStop={handleDragStop}
                                                         onResizeStop={handleResizeStop}
                                                         bounds="parent"
-                                                        lockAspectRatio={2.6}
                                                         enableResizing={true}
                                                         className="absolute z-20 rounded shadow-md bg-white/90 overflow-hidden border-2 border-brand-500 cursor-move group select-none"
                                                     >
@@ -686,7 +687,7 @@ export default function SuratCreate() {
 
                                         <button
                                             type="button"
-                                            onClick={handleSubmit}
+                                            onClick={() => setShowConfirm(true)}
                                             disabled={processing}
                                             className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-60 bg-brand-500 hover:bg-brand-600 disabled:cursor-not-allowed"
                                         >
@@ -756,6 +757,28 @@ export default function SuratCreate() {
                 </div>
 
             </div>
+
+            {/* ── Submit / Ajukan Confirmation Modal ── */}
+            <ConfirmDialog
+                open={showConfirm}
+                icon={
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                }
+                iconBgClass="bg-indigo-100"
+                title="Ajukan surat ini?"
+                description="Surat akan dikirim ke approver untuk ditinjau. Setelah diajukan, Anda tidak dapat mengubah isi surat tanpa mengajukan revisi."
+                cancelLabel="Batal"
+                confirmLabel="Ya, Ajukan"
+                confirmBtnClass="bg-indigo-600 hover:bg-indigo-700"
+                isLoading={processing}
+                onCancel={() => setShowConfirm(false)}
+                onConfirm={() => {
+                    setShowConfirm(false);
+                    handleSubmit();
+                }}
+            />
         </AuthenticatedLayout>
     );
 }

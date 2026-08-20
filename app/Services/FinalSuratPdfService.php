@@ -59,15 +59,21 @@ class FinalSuratPdfService
 
     private function createQrCode(string $verificationUrl, string $path): void
     {
-        Builder::create()
+        $logoPath = public_path('favicon.png');
+        
+        $builder = Builder::create()
             ->writer(new PngWriter())
             ->writerOptions([])
             ->data($verificationUrl)
             ->size(500)
-            ->margin(12)
-            ->validateResult(false)
-            ->build()
-            ->saveToFile($path);
+            ->margin(0)
+            ->validateResult(false);
+
+        if (file_exists($logoPath)) {
+            $builder->logoPath($logoPath)->logoResizeToWidth(120)->logoPunchoutBackground(true);
+        }
+
+        $builder->build()->saveToFile($path);
     }
 
     private function stampPdf(Surat $surat, string $draftPath, string $qrPath, string $badgePath, string $finalPath, array $position, string $verificationUrl): void
@@ -83,8 +89,8 @@ class FinalSuratPdfService
             $pdf->useTemplate($template);
 
             if ($page === (int) $position['page']) {
-                $width = max(45, min($size['width'] * (float) $position['width'], $size['width']));
-                $height = max(16, min($size['height'] * (float) $position['height'], $size['height']));
+                $width = min($size['width'] * (float) $position['width'], $size['width']);
+                $height = min($size['height'] * (float) $position['height'], $size['height']);
                 $x = min(max(0, $size['width'] * (float) $position['x']), $size['width'] - $width);
                 $y = min(max(0, $size['height'] * (float) $position['y']), $size['height'] - $height);
 
@@ -110,53 +116,74 @@ class FinalSuratPdfService
 
     private function createBadge(Surat $surat, string $qrPath, string $badgePath, float $widthMm, float $heightMm, string $verificationUrl): void
     {
-        $scale = 8;
-        $width = max(360, (int) round($widthMm * $scale));
-        $height = max(128, (int) round($heightMm * $scale));
+        // Dynamic scale based on physical mm size, to preserve the exact aspect ratio drawn by the user
+        $scale = 10;
+        $width = max(100, (int) round($widthMm * $scale));
+        $height = max(30, (int) round($heightMm * $scale));
+
         $badge = imagecreatetruecolor($width, $height);
+        
         $white = imagecolorallocate($badge, 255, 255, 255);
-        $border = imagecolorallocate($badge, 156, 163, 175);
-        $dark = imagecolorallocate($badge, 30, 41, 59);
+        $black = imagecolorallocate($badge, 0, 0, 0);
 
         imagefill($badge, 0, 0, $white);
         
-        // Garis batas hanya di bawah dan tipis
-        imageline($badge, 0, $height - 1, $width - 1, $height - 1, $border);
+        // Full outline box without rounded corners
+        imagesetthickness($badge, max(1, (int) round($scale * 0.2))); // slightly thicker border
+        imagerectangle($badge, 0, 0, $width - 1, $height - 1, $black);
 
-        $padding = (int) round($height * 0.12);
+        // Reset thickness for other drawing if necessary
+        imagesetthickness($badge, 1);
+
+        // Calculate font sizes proportional to canvas height
+        $baseFontSizePt = max(6, $height * 0.09 * 0.75); 
+        $largeFontSizePt = max(8, $height * 0.10 * 0.75); 
+        $lineSpacing = (int) round($height * 0.13); // Vertical distance between lines
+        
+        // Calculate dimensions
+        $padding = (int) round($height * 0.04); // 4% padding all around
         $qrSize = $height - (2 * $padding);
+        $textGap = (int) round($height * 0.04); // Padding between QR and text
+        
+        // Insert QR Code on the left
         $qr = imagecreatefrompng($qrPath);
         imagecopyresampled($badge, $qr, $padding, $padding, 0, 0, $qrSize, $qrSize, imagesx($qr), imagesy($qr));
         imagedestroy($qr);
 
+        $textX = $padding + $qrSize + $textGap;
+        
         $fontPath = base_path('vendor/endroid/qr-code/assets/open_sans.ttf');
-        $textX = $padding + $qrSize + (int) round($height * 0.11);
-        $lineY = $padding + 12; // Baseline for TTF
         
-        // TTE oleh :
-        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, 'TTE oleh :');
-        $lineY += 16;
+        // Vertically center the text groups
+        $totalTextHeight = (int) round($lineSpacing * 1.05 * 4 + $lineSpacing * 1.5); // 5 lines (4 gaps) + 1 extra gap between groups
+        $lineY = ($height - $totalTextHeight) / 2 + $baseFontSizePt;
         
-        // NAMA APPROVER
+        // Group 1: TTE oleh
+        imagettftext($badge, $baseFontSizePt, 0, $textX, (int)$lineY, $black, $fontPath, 'TTE oleh :');
+        $lineY += (int) round($lineSpacing * 1.05);
+        
+        // Group 1: NAMA APPROVER
         $namaApprover = strtoupper($this->ascii($surat->approvedBy?->name ?? 'APPROVER'));
-        imagettftext($badge, 10, 0, $textX, $lineY, $dark, $fontPath, $namaApprover);
-        imagettftext($badge, 10, 0, $textX + 1, $lineY, $dark, $fontPath, $namaApprover); // Emulate bold
-        $lineY += 18;
+        imagettftext($badge, $largeFontSizePt, 0, $textX, (int)$lineY, $black, $fontPath, $namaApprover);
+        imagettftext($badge, $largeFontSizePt, 0, $textX + 1, (int)$lineY, $black, $fontPath, $namaApprover); // Emulate bold
+        $lineY += (int) round($lineSpacing * 1.05);
         
-        // Tanggal dan Jam
+        // Group 1: Tanggal dan Jam
         $tanggal = $surat->approved_at ? $surat->approved_at->translatedFormat('d F Y H:i:s') . ' WIB' : date('d F Y H:i:s') . ' WIB';
-        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, $tanggal);
-        $lineY += 28; // Jarak yang diperbesar/diperjauh
+        imagettftext($badge, $baseFontSizePt, 0, $textX, (int)$lineY, $black, $fontPath, $tanggal);
         
-        // Verifikasi melalui
-        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, 'Verifikasi melalui');
-        $lineY += 16;
+        // Gap between groups
+        $lineY += (int) round($lineSpacing * 1.5);
         
-        // URL Web
+        // Group 2: Verifikasi melalui
+        imagettftext($badge, $baseFontSizePt, 0, $textX, (int)$lineY, $black, $fontPath, 'Verifikasi melalui');
+        $lineY += (int) round($lineSpacing * 1.05);
+
+        // Group 2: URL Web
         $scheme = parse_url($verificationUrl, PHP_URL_SCHEME) ?? 'https';
         $host = parse_url($verificationUrl, PHP_URL_HOST) ?? 'esurat.pissya.or.id';
         $shortUrl = $scheme . '://' . $host;
-        imagettftext($badge, 8, 0, $textX, $lineY, $dark, $fontPath, $this->ascii($shortUrl));
+        imagettftext($badge, $baseFontSizePt, 0, $textX, (int)$lineY, $black, $fontPath, $this->ascii($shortUrl));
 
         imagepng($badge, $badgePath);
         imagedestroy($badge);

@@ -154,8 +154,8 @@ export default function SuratIndex() {
     // QR Placement Coordinates States
     const [qrPosition, setQrPosition] = useState({
         page: 1,
-        x: 0.5959420337578605,
-        y: 0.8114879860558097,
+        x: 0.59,
+        y: 0.81,
         width: 0.32,
         height: 0.07
     });
@@ -193,7 +193,7 @@ export default function SuratIndex() {
         if (!canSubmit || renderedWidth === 0 || renderedHeight === 0) return;
         const newX = d.x / renderedWidth;
         const newY = d.y / renderedHeight;
-        setQrPosition(prev => ({ ...prev, x: newX, y: newY, width: 0.32, height: 0.07 }));
+        setQrPosition(prev => ({ ...prev, x: newX, y: newY }));
         setBadgeState(prev => ({ ...prev, x: d.x, y: d.y }));
     };
 
@@ -236,8 +236,8 @@ export default function SuratIndex() {
                 page: Number(initialPos.page) || 1,
                 x: Number(initialPos.x) || 0,
                 y: Number(initialPos.y) || 0,
-                width: 0.32,
-                height: 0.07
+                width: Number(initialPos.width) || 0.32,
+                height: Number(initialPos.height) || 0.07
             });
             setPageNumber(Number(initialPos.page) || 1);
         } catch (e) {
@@ -516,26 +516,66 @@ export default function SuratIndex() {
                                 {/* History Card */}
                                 {activeLetter.approval_logs && activeLetter.approval_logs.length > 0 && (
                                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                                        <div className="px-5 py-4 border-b border-gray-105 dark:border-gray-700">
-                                            <h3 className="font-semibold text-gray-808 dark:text-gray-200 text-sm">Riwayat Aktivitas</h3>
+                                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                                            <h3 className="font-semibold text-gray-800 dark:text-gray-205 text-sm">Riwayat Aktivitas</h3>
                                         </div>
-                                        <div className="px-5 py-4">
-                                            <ol className="relative border-l border-gray-100 dark:border-gray-700 ml-2 space-y-4">
-                                                {activeLetter.approval_logs.map((log) => {
-                                                    const cfg = AKSI_CONFIG[log.aksi] ?? { label: log.aksi, color: 'text-gray-600 dark:text-gray-400' };
-                                                    return (
-                                                        <li key={log.id} className="ml-4">
-                                                            <div className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 bg-indigo-300 dark:bg-indigo-500" />
-                                                            <p className={`text-xs font-semibold ${cfg.color}`}>{cfg.label}</p>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">{log.user?.name ?? 'Sistem'}</p>
-                                                            <p className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(log.created_at)}</p>
-                                                            {log.catatan && (
-                                                                <p className="mt-1 text-xs text-gray-650 dark:text-gray-305 bg-gray-50 dark:bg-gray-900/50 rounded-lg px-2 py-1">{log.catatan}</p>
-                                                            )}
-                                                        </li>
-                                                    );
-                                                })}
-                                            </ol>
+                                        <div className="px-5 py-5">
+                                            <div className="relative pl-1">
+                                                {/* Vertical Line */}
+                                                <div className="absolute left-[18px] top-2 bottom-6 w-[2px] bg-gray-200 dark:bg-gray-700"></div>
+
+                                                <div className="space-y-0">
+                                                    {activeLetter.approval_logs?.map((log, index) => {
+                                                        const cfg = AKSI_CONFIG[log.aksi] ?? { label: log.aksi, color: 'text-gray-900 dark:text-white' };
+                                                        const isLast = index === (activeLetter.approval_logs?.length ?? 0) - 1;
+
+                                                        // Icons & Colors
+                                                        let IconPath = "M5 13l4 4L19 7"; // Check (Disetujui)
+                                                        let circleBg = "bg-emerald-50 dark:bg-emerald-900/30";
+                                                        let iconColor = "text-emerald-500 dark:text-emerald-400";
+
+                                                        if (log.aksi === 'diajukan') {
+                                                            IconPath = "M12 4v16m8-8H4"; // Plus (Diajukan)
+                                                            circleBg = "bg-gray-100 dark:bg-gray-800";
+                                                            iconColor = "text-gray-500 dark:text-gray-400";
+                                                        } else if (log.aksi === 'ditolak') {
+                                                            IconPath = "M6 18L18 6M6 6l12 12"; // Cross (Ditolak)
+                                                            circleBg = "bg-red-50 dark:bg-red-900/30";
+                                                            iconColor = "text-red-500 dark:text-red-400";
+                                                        }
+
+                                                        return (
+                                                            <div key={log.id} className={`relative flex items-start ${isLast ? '' : 'pb-7'}`}>
+                                                                {/* Icon Circle */}
+                                                                <div className={`relative z-10 w-7 h-7 rounded-full ${circleBg} flex items-center justify-center flex-shrink-0 ring-[5px] ring-white dark:ring-gray-800`}>
+                                                                    <svg className={`w-4 h-4 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d={IconPath} />
+                                                                    </svg>
+                                                                </div>
+
+                                                                {/* Content */}
+                                                                <div className="ml-5 pt-0.5">
+                                                                    <h4 className="font-semibold text-[14px] text-gray-900 dark:text-white">
+                                                                        {cfg.label}
+                                                                    </h4>
+                                                                    <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">
+                                                                        {formatDateTime(log.created_at)}
+                                                                    </p>
+
+                                                                    <p className="text-[13px] text-gray-700 dark:text-gray-300 mt-2">
+                                                                        Aktivitas oleh <span className="font-semibold text-gray-900 dark:text-white">{log.user?.name ?? 'Sistem'}</span>.
+                                                                        {log.catatan && (
+                                                                            <span className="block mt-1">
+                                                                                "{log.catatan}"
+                                                                            </span>
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -645,9 +685,8 @@ export default function SuratIndex() {
                                                 onDragStop={handleDragStop}
                                                 onResizeStop={handleResizeStop}
                                                 bounds="parent"
-                                                lockAspectRatio={2.6}
                                                 disableDragging={!canSubmit}
-                                                enableResizing={false}
+                                                enableResizing={canSubmit}
                                                 className={`absolute z-10 rounded shadow-md bg-white/90 overflow-hidden ${canSubmit
                                                     ? 'border-2 border-indigo-500 cursor-move group'
                                                     : 'border border-gray-300 opacity-80 pointer-events-none'

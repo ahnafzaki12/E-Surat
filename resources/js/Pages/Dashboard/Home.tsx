@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import PageMeta from '../../components/common/PageMeta';
 import Overview from '../../components/Dashboard/Overview';
 import MiniChartsRow from '../../components/Dashboard/MiniChartsRow';
-import ConversionFunnelChart from '../../components/Dashboard/ConversionFunnelChart';
-import PerformanceAndSales from '../../components/Dashboard/PerformanceAndSales';
+import StatistikSuratMasuk from '../../components/Dashboard/StatistikSuratMasuk';
+import ChartKanan from '../../components/Dashboard/ChartKanan';
 
 export default function Home() {
   const [period, setPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
@@ -17,15 +17,15 @@ export default function Home() {
       <Overview period={period} onPeriodChange={setPeriod} />
 
       <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {/* Left Column (Mini Charts + Funnel) */}
+        {/* Left Column (Mini Charts + Statistik Surat Masuk) */}
         <div className="col-span-12 flex flex-col gap-4 md:gap-6 xl:col-span-8">
           <MiniChartsRow period={period} />
-          <ConversionFunnelChart />
+          <StatistikSuratMasuk />
         </div>
 
-        {/* Right Column (Performance & Sales) */}
+        {/* Right Column (Jenis Surat Chart) */}
         <div className="col-span-12 xl:col-span-4">
-          <PerformanceAndSales period={period} />
+          <ChartKanan />
         </div>
       </div>
     </>

@@ -355,7 +355,7 @@ const AppSidebar: React.FC = () => {
                   {isExpanded || isHovered || isMobileOpen ? (
                     "Sistem"
                   ) : (
-                    <HorizontaLDots />
+                    <HorizontaLDots className="size-6" />
                   )}
                 </h2>
                 {renderMenuItems(filteredSystemItems, "system")}

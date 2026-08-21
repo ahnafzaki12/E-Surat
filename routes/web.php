@@ -24,14 +24,79 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 // Route yang dilindungi (harus login)
 Route::middleware(['auth', 'permission:dashboard.view'])->group(function () {
     Route::get('/', function () {
+        // 1. Status counters
         $stats = [
             'disetujui' => \App\Models\Surat::where('status', 'disetujui')->count(),
             'menunggu_persetujuan' => \App\Models\Surat::where('status', 'menunggu_persetujuan')->count(),
             'draft' => \App\Models\Surat::where('status', 'draft')->count(),
             'ditolak' => \App\Models\Surat::where('status', 'ditolak')->count(),
         ];
+
+        // 2. Surat Masuk Total & Monthly Trend (Jan..Aug of current year)
+        $totalSuratMasuk = \App\Models\Surat::count();
+        $currentYear = now()->year;
+
+        $suratMasukMonthly = [];
+        $suratDisetujuiMonthly = [];
+
+        for ($m = 1; $m <= 8; $m++) {
+            $suratMasukMonthly[] = \App\Models\Surat::whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $m)
+                ->count();
+
+            $suratDisetujuiMonthly[] = \App\Models\Surat::where('status', 'disetujui')
+                ->whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $m)
+                ->count();
+        }
+
+        // 3. Dynamic Lembaga Stats - Single Source of Truth from `lembagas` table
+        $lembagas = \App\Models\Lembaga::orderBy('lemb_id')->get();
+        $lembagaSeries = [];
+
+        foreach ($lembagas as $lembaga) {
+            $monthlyCounts = [];
+            for ($m = 1; $m <= 8; $m++) {
+                $count = \App\Models\Surat::whereYear('created_at', $currentYear)
+                    ->whereMonth('created_at', $m)
+                    ->whereHas('createdBy', function ($q) use ($lembaga) {
+                        $q->where('lemb_id', $lembaga->lemb_id);
+                    })->count();
+                $monthlyCounts[] = $count;
+            }
+            $lembagaSeries[] = [
+                'id' => $lembaga->lemb_id,
+                'name' => $lembaga->lemb_name,
+                'data' => $monthlyCounts,
+            ];
+        }
+
+        // 4. Dynamic Jenis Surat Stats - Single Source of Truth from `jenis_surats` table
+        $jenisSurats = \App\Models\JenisSurat::orderBy('id')->get();
+        $jenisSuratSeries = [];
+
+        foreach ($jenisSurats as $jenis) {
+            $count = \App\Models\Surat::where('jenis_surat_id', $jenis->id)->count();
+            $jenisSuratSeries[] = [
+                'id' => $jenis->id,
+                'kode' => $jenis->kode,
+                'name' => $jenis->nama,
+                'count' => $count,
+            ];
+        }
+
         return Inertia\Inertia::render('Dashboard', [
-            'stats' => $stats
+            'stats' => $stats,
+            'suratMasuk' => [
+                'total' => $totalSuratMasuk,
+                'monthly_trend' => $suratMasukMonthly,
+            ],
+            'suratDisetujui' => [
+                'total' => $stats['disetujui'],
+                'monthly_trend' => $suratDisetujuiMonthly,
+            ],
+            'lembagaStats' => $lembagaSeries,
+            'jenisSuratStats' => $jenisSuratSeries,
         ]);
     })->name('dashboard');
 });

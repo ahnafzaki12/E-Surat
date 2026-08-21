@@ -1,47 +1,7 @@
 import React from 'react';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
-
-const sparklineOptionsRed: ApexOptions = {
-  chart: {
-    type: 'area',
-    sparkline: {
-      enabled: true,
-    },
-  },
-  stroke: {
-    curve: 'smooth',
-    width: 2,
-  },
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.45,
-      opacityTo: 0.05,
-      stops: [50, 100],
-    },
-  },
-  colors: ['#F04438'],
-  tooltip: {
-    fixed: {
-      enabled: false,
-    },
-    x: {
-      show: false,
-    },
-    y: {
-      title: {
-        formatter: function () {
-          return '';
-        },
-      },
-    },
-    marker: {
-      show: false,
-    },
-  },
-};
+import { usePage } from '@inertiajs/react';
 
 const sparklineOptionsGreen: ApexOptions = {
   chart: {
@@ -63,7 +23,7 @@ const sparklineOptionsGreen: ApexOptions = {
       stops: [50, 100],
     },
   },
-  colors: ['#12B76A'],
+  colors: ['#465FFF'],
   tooltip: {
     fixed: {
       enabled: false,
@@ -84,18 +44,44 @@ const sparklineOptionsGreen: ApexOptions = {
   },
 };
 
-const MiniChartsRow: React.FC = () => {
+interface MiniChartsRowProps {
+  period?: 'weekly' | 'monthly' | 'yearly';
+}
+
+const MiniChartsRow: React.FC<MiniChartsRowProps> = () => {
+  const { props } = usePage();
+
+  const suratMasukProp = (props.suratMasuk as {
+    total?: number;
+    monthly_trend?: number[];
+  }) || {};
+
+  const suratDisetujuiProp = (props.suratDisetujui as {
+    total?: number;
+    monthly_trend?: number[];
+  }) || {};
+
+  const suratMasukTotal = suratMasukProp.total ?? 0;
+  const suratMasukSeries = suratMasukProp.monthly_trend && suratMasukProp.monthly_trend.length > 0
+    ? suratMasukProp.monthly_trend
+    : [0, 0, 0, 0, 0, 0, 0, 0];
+
+  const suratSelesaiTotal = suratDisetujuiProp.total ?? 0;
+  const suratSelesaiSeries = suratDisetujuiProp.monthly_trend && suratDisetujuiProp.monthly_trend.length > 0
+    ? suratDisetujuiProp.monthly_trend
+    : [0, 0, 0, 0, 0, 0, 0, 0];
+
   return (
-    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
-      {/* Churn Rate */}
+    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+      {/* Surat Masuk */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between">
           <div>
             <h4 className="text-lg font-bold text-gray-800 dark:text-white">
-              Churn Rate
+              Surat Masuk
             </h4>
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Downgrade to Free plan
+              Total surat masuk sistem
             </span>
           </div>
           <button className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white">
@@ -136,16 +122,19 @@ const MiniChartsRow: React.FC = () => {
         <div className="mt-6 flex items-end justify-between">
           <div>
             <h4 className="text-2xl font-bold text-gray-900 dark:text-white">
-              4.26%
+              {suratMasukTotal}
             </h4>
             <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <span className="text-error-500">0.31%</span> than last Week
+              <span className="text-green-600 dark:text-green-400 font-semibold">
+                {suratMasukTotal > 0 ? '+100%' : '0%'}
+              </span>{' '}
+              dari periode sebelumnya
             </p>
           </div>
           <div className="w-[100px]">
             <ReactApexChart
-              options={sparklineOptionsRed}
-              series={[{ data: [25, 66, 41, 89, 63, 25, 44, 12, 36, 9, 54] }]}
+              options={sparklineOptionsGreen}
+              series={[{ data: suratMasukSeries }]}
               type="area"
               height={40}
             />
@@ -153,15 +142,15 @@ const MiniChartsRow: React.FC = () => {
         </div>
       </div>
 
-      {/* User Growth */}
+      {/* Surat Diselesaikan */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between">
           <div>
             <h4 className="text-lg font-bold text-gray-800 dark:text-white">
-              User Growth
+              Surat Diselesaikan
             </h4>
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              New signups website + mobile
+              Surat disetujui & diproses
             </span>
           </div>
           <button className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white">
@@ -202,16 +191,19 @@ const MiniChartsRow: React.FC = () => {
         <div className="mt-6 flex items-end justify-between">
           <div>
             <h4 className="text-2xl font-bold text-gray-900 dark:text-white">
-              3,768
+              {suratSelesaiTotal}
             </h4>
             <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <span className="text-success-500">+3.85%</span> than last Week
+              <span className="text-green-600 dark:text-green-400 font-semibold">
+                {suratSelesaiTotal > 0 ? '+100%' : '0%'}
+              </span>{' '}
+              dari periode sebelumnya
             </p>
           </div>
           <div className="w-[100px]">
             <ReactApexChart
               options={sparklineOptionsGreen}
-              series={[{ data: [12, 14, 2, 47, 42, 15, 47, 75, 65, 19, 14] }]}
+              series={[{ data: suratSelesaiSeries }]}
               type="area"
               height={40}
             />

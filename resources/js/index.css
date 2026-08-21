@@ -76,10 +76,10 @@ layer(base);
   --color-gray-500: #667085;
   --color-gray-600: #475467;
   --color-gray-700: #344054;
-  --color-gray-800: #1d2939;
-  --color-gray-900: #101828;
-  --color-gray-950: #0c111d;
-  --color-gray-dark: #1a2231;
+  --color-gray-800: #243044;
+  --color-gray-900: #111827;
+  --color-gray-950: #0F172A;
+  --color-gray-dark: #172033;
 
   --color-orange-25: #fffaf5;
   --color-orange-50: #fff6ed;
@@ -186,7 +186,7 @@ layer(base);
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50;
+    @apply relative font-normal font-outfit z-1 bg-gray-50 text-gray-800 dark:bg-[#0B1120] dark:text-[#CBD5E1] transition-colors duration-200;
   }
 }
 
@@ -195,19 +195,19 @@ layer(base);
 }
 
 @utility menu-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply bg-brand-50 text-brand-500 dark:bg-[#1E2A5A] dark:text-[#4F64E8];
 }
 
 @utility menu-item-inactive {
-  @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
+  @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-[#CBD5E1] dark:hover:bg-[#172033] dark:hover:text-[#F8FAFC];
 }
 
 @utility menu-item-icon {
-  @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
+  @apply text-gray-500 group-hover:text-gray-700 dark:text-[#94A3B8];
 }
 
 @utility menu-item-icon-active {
-  @apply text-brand-500 dark:text-brand-400;
+  @apply text-brand-500 dark:text-[#4F64E8];
 }
 
 @utility menu-item-icon-size {
@@ -217,7 +217,7 @@ layer(base);
 }
 
 @utility menu-item-icon-inactive {
-  @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+  @apply text-gray-500 group-hover:text-gray-700 dark:text-[#94A3B8] dark:group-hover:text-[#CBD5E1];
 }
 
 @utility menu-item-arrow {
@@ -225,11 +225,11 @@ layer(base);
 }
 
 @utility menu-item-arrow-active {
-  @apply rotate-180 text-brand-500 dark:text-brand-400;
+  @apply rotate-180 text-brand-500 dark:text-[#4F64E8];
 }
 
 @utility menu-item-arrow-inactive {
-  @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+  @apply text-gray-500 group-hover:text-gray-700 dark:text-[#94A3B8] dark:group-hover:text-[#CBD5E1];
 }
 
 @utility menu-dropdown-item {
@@ -237,23 +237,23 @@ layer(base);
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply bg-brand-50 text-brand-500 dark:bg-[#1E2A5A] dark:text-[#4F64E8];
 }
 
 @utility menu-dropdown-item-inactive {
-  @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  @apply text-gray-700 hover:bg-gray-100 dark:text-[#CBD5E1] dark:hover:bg-[#172033];
 }
 
 @utility menu-dropdown-badge {
-  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-brand-500 dark:text-brand-400;
+  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-brand-500 dark:text-[#4F64E8];
 }
 
 @utility menu-dropdown-badge-active {
-  @apply bg-brand-100 dark:bg-brand-500/20;
+  @apply bg-brand-100 dark:bg-[#1E2A5A];
 }
 
 @utility menu-dropdown-badge-inactive {
-  @apply bg-brand-50 group-hover:bg-brand-100 dark:bg-brand-500/15 dark:group-hover:bg-brand-500/20;
+  @apply bg-brand-50 group-hover:bg-brand-100 dark:bg-[#172033] dark:group-hover:bg-[#1E2A5A];
 }
 @utility no-scrollbar {
   /* Chrome, Safari and Opera */
@@ -273,11 +273,11 @@ layer(base);
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+    @apply bg-gray-200 rounded-full dark:bg-[#243044];
   }
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #344054;
+  background-color: #243044;
 }
 
 @layer utilities {
@@ -300,15 +300,16 @@ layer(base);
 
 /* third-party libraries CSS */
 .apexcharts-legend-text {
-  @apply !text-gray-700 dark:!text-gray-400;
+  @apply !text-gray-700 dark:!text-[#CBD5E1];
 }
 
 .apexcharts-text {
-  @apply !fill-gray-700 dark:!fill-gray-400;
+  @apply !fill-gray-700 dark:!fill-[#94A3B8];
 }
 
-.apexcharts-tooltip.apexcharts-theme-light {
-  @apply gap-1 !rounded-lg !border-gray-200 p-3 !shadow-theme-sm dark:!border-gray-800 dark:!bg-gray-900;
+.apexcharts-tooltip.apexcharts-theme-light,
+.apexcharts-tooltip {
+  @apply gap-1 !rounded-lg !border-gray-200 p-3 !shadow-theme-sm dark:!border-[#243044] dark:!bg-[#172033] dark:!text-[#F8FAFC];
 }
 
 .apexcharts-tooltip-marker {
@@ -317,7 +318,7 @@ layer(base);
   width: 6px;
 }
 .apexcharts-legend-text {
-  @apply !pl-5 !text-gray-700 dark:!text-gray-400;
+  @apply !pl-5 !text-gray-700 dark:!text-[#CBD5E1];
 }
 .apexcharts-tooltip-series-group {
   @apply !p-0;
@@ -326,17 +327,17 @@ layer(base);
   @apply !p-0;
 }
 .apexcharts-tooltip-title {
-  @apply !mb-0 !border-b-0 !bg-transparent !p-0 !text-[10px] !leading-4 !text-gray-800 dark:!text-white/90;
+  @apply !mb-0 !border-b-0 !bg-transparent !p-0 !text-[10px] !leading-4 !text-gray-800 dark:!text-[#F8FAFC];
 }
 .apexcharts-tooltip-text {
-  @apply !text-theme-xs !text-gray-700 dark:!text-white/90;
+  @apply !text-theme-xs !text-gray-700 dark:!text-[#CBD5E1];
 }
 .apexcharts-tooltip-text-y-value {
   @apply !font-medium;
 }
 
 .apexcharts-gridline {
-  @apply !stroke-gray-100 dark:!stroke-gray-800;
+  @apply !stroke-gray-100 dark:!stroke-[#243044];
 }
 #chartTwo .apexcharts-datalabels-group {
   @apply !-translate-y-24;

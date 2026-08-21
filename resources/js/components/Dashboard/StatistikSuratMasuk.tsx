@@ -29,7 +29,7 @@ interface BackendLembagaStat {
   data: number[];
 }
 
-const ConversionFunnelChart: React.FC = () => {
+const StatistikSuratMasuk: React.FC = () => {
   const { props } = usePage();
   const [selectedLembagaId, setSelectedLembagaId] = useState<string>('Semua');
 
@@ -86,16 +86,25 @@ const ConversionFunnelChart: React.FC = () => {
       },
       labels: {
         style: {
-          colors: '#667085',
+          colors: '#94A3B8',
           fontSize: '12px',
         },
       },
     },
     yaxis: {
+      min: 0,
+      forceNiceScale: true,
+      decimalsInFloat: 0,
       labels: {
         style: {
-          colors: '#667085',
+          colors: '#94A3B8',
           fontSize: '12px',
+        },
+        formatter: (val: number) => {
+          if (val % 1 === 0) {
+            return val.toFixed(0);
+          }
+          return '';
         },
       },
     },
@@ -107,7 +116,7 @@ const ConversionFunnelChart: React.FC = () => {
         size: 6,
       },
       labels: {
-        colors: '#667085',
+        colors: '#CBD5E1',
       },
     },
     fill: {
@@ -116,7 +125,7 @@ const ConversionFunnelChart: React.FC = () => {
     colors: seriesColors.length > 0 ? seriesColors : ['#3046C8'],
     grid: {
       strokeDashArray: 0,
-      borderColor: '#f2f4f7',
+      borderColor: 'rgba(36, 48, 68, 0.5)',
       yaxis: {
         lines: {
           show: true,
@@ -129,6 +138,7 @@ const ConversionFunnelChart: React.FC = () => {
       },
     },
     tooltip: {
+      theme: 'dark',
       y: {
         formatter: (val: number) => `${val} Surat`,
       },
@@ -136,27 +146,27 @@ const ConversionFunnelChart: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-6 dark:border-[#243044] dark:bg-[#111827] transition-colors duration-200">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-[#F8FAFC]">
             Statistik Surat Masuk
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-[#94A3B8]">
             Jumlah surat masuk per bulan berdasarkan lembaga
           </p>
         </div>
 
         {/* Dynamic Lembaga Filter Dropdown */}
         <div className="flex items-center gap-2">
-          <label htmlFor="filter-lembaga" className="text-xs font-medium text-gray-500 dark:text-gray-400">
+          <label htmlFor="filter-lembaga" className="text-xs font-medium text-gray-500 dark:text-[#94A3B8]">
             Filter Lembaga:
           </label>
           <select
             id="filter-lembaga"
             value={selectedLembagaId}
             onChange={(e) => setSelectedLembagaId(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-[#243044] dark:bg-[#172033] dark:text-[#CBD5E1] dark:hover:bg-[#1E293B]"
           >
             <option value="Semua">Semua Lembaga</option>
             {indexedLembagas.map((item) => (
@@ -180,4 +190,4 @@ const ConversionFunnelChart: React.FC = () => {
   );
 };
 
-export default ConversionFunnelChart;
+export default StatistikSuratMasuk;

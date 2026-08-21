@@ -8,7 +8,7 @@ const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
   return (
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen xl:flex bg-gray-50 dark:bg-[#0B1120] text-gray-800 dark:text-[#CBD5E1] transition-colors duration-200">
       <div>
         <AppSidebar />
         <Backdrop />

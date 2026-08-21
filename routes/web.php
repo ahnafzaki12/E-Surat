@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\JenisSuratController;
 use App\Http\Controllers\LembagaController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Verifikasi dan unduhan dokumen final bersifat publik; token tidak memuat ID surat.
@@ -138,4 +139,8 @@ Route::middleware(['auth'])->group(function () {
     // Ganti file draft surat yang ditolak
     Route::post('surat/{surat}/replace-file', [SuratController::class, 'replaceFileDraft'])
         ->name('surat.replace-file')->middleware('permission:surat.replace-file');
+
+    // Profile (Pengaturan Akun)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });

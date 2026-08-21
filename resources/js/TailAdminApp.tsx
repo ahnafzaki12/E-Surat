@@ -30,7 +30,7 @@ export default function TailAdminApp() {
             <Route index path="/" element={<Home />} />
 
             {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
+            {/* Removed UserProfiles route to allow Inertia /profile to handle it */}
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
 

@@ -26,6 +26,7 @@ class User extends Authenticatable
         'lemb_id',
         'phone',
         'status',
+        'avatar',
     ];
 
     public function role()

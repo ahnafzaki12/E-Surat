@@ -125,31 +125,31 @@ export default function StationManagement() {
 
     if (editingId) {
       const result = await showConfirm(
-        'Update Station?',
-        'Are you sure you want to update this station?',
-        'Yes, update station'
+        'Perbarui Lembaga?',
+        'Apakah Anda yakin ingin memperbarui lembaga ini?',
+        'Ya, perbarui lembaga'
       );
       if (!result.isConfirmed) return;
 
       put(route('stations.update', editingId), {
         onSuccess: () => {
-          showToast('success', 'Station updated successfully');
+          showToast('success', 'Lembaga berhasil diperbarui');
           setIsModalOpen(false);
           reset();
         },
         onError: (errors: any) => {
-          showAlert('error', 'Update Failed', errors.message || 'An error occurred');
+          showAlert('error', 'Gagal Memperbarui', errors.message || 'Terjadi kesalahan');
         }
       });
     } else {
       post(route('stations.store'), {
         onSuccess: () => {
-          showToast('success', 'Station created successfully');
+          showToast('success', 'Lembaga berhasil dibuat');
           setIsModalOpen(false);
           reset();
         },
         onError: (errors: any) => {
-          showAlert('error', 'Creation Failed', errors.message || 'An error occurred');
+          showAlert('error', 'Gagal Membuat', errors.message || 'Terjadi kesalahan');
         }
       });
     }
@@ -157,19 +157,19 @@ export default function StationManagement() {
 
   const handleDelete = async (id: number) => {
     const result = await showConfirm(
-      'Delete Station?',
-      'This action cannot be undone. Make sure no users or activities are currently assigned to this station.',
-      'Yes, delete station'
+      'Hapus Lembaga?',
+      'Tindakan ini tidak dapat dibatalkan. Pastikan tidak ada pengguna atau aktivitas yang terhubung dengan lembaga ini.',
+      'Ya, hapus lembaga'
     );
 
     if (!result.isConfirmed) return;
 
     router.delete(route('stations.destroy', id), {
       onSuccess: () => {
-        showToast('success', 'Station deleted successfully');
+        showToast('success', 'Lembaga berhasil dihapus');
       },
       onError: (errors: any) => {
-        showAlert('error', 'Delete Failed', errors.message || 'An error occurred');
+        showAlert('error', 'Gagal Menghapus', errors.message || 'Terjadi kesalahan');
       }
     });
   };
@@ -188,10 +188,10 @@ export default function StationManagement() {
   return (
     <AuthenticatedLayout>
       <PageMeta
-        title="Station Management | JAS Airport Services"
-        description="Manage airport stations"
+        title="Manajemen Lembaga | E-Surat"
+        description="Kelola lembaga"
       />
-      <PageBreadcrumb pageTitle="Station Management" />
+      <PageBreadcrumb pageTitle="Manajemen Lembaga" />
 
       <div className="space-y-6">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 mt-4">
@@ -199,10 +199,10 @@ export default function StationManagement() {
           <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Stations
+                Lembaga
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Manage airport stations and locations.
+                Kelola lembaga dan lokasi.
               </p>
             </div>
 
@@ -213,7 +213,7 @@ export default function StationManagement() {
                 </span>
                 <input
                   type="text"
-                  placeholder="Search stations..."
+                  placeholder="Cari lembaga..."
                   className="pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-transparent outline-none focus:border-blue-500 dark:border-gray-800 dark:text-white transition-all w-full sm:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -227,7 +227,7 @@ export default function StationManagement() {
                   onClick={() => handleOpenModal()}
                   className="rounded-xl shadow-lg shadow-brand-500/20 w-full sm:w-auto justify-center"
                 >
-                  Add Station
+                  Tambah Lembaga
                 </Button>
               )}
             </div>
@@ -254,7 +254,7 @@ export default function StationManagement() {
                     onClick={() => handleSort("lemb_name")}
                   >
                     <div className="flex items-center">
-                      Station Name
+                      Nama Lembaga
                       {getSortIcon("lemb_name")}
                     </div>
                   </TableCell>
@@ -283,7 +283,7 @@ export default function StationManagement() {
                             <button
                               onClick={() => handleOpenModal(item)}
                               className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                              title="Edit Station"
+                              title="Edit Lembaga"
                             >
                               <LuPencil className="size-4.5" />
                             </button>
@@ -292,7 +292,7 @@ export default function StationManagement() {
                             <button
                               onClick={() => handleDelete(item.lemb_id)}
                               className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                              title="Delete Station"
+                              title="Hapus Lembaga"
                             >
                               <LuTrash2 className="size-4.5" />
                             </button>
@@ -304,7 +304,7 @@ export default function StationManagement() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={3} className="py-10 text-center text-gray-500">
-                      No stations found.
+                      Tidak ada lembaga ditemukan.
                     </TableCell>
                   </TableRow>
                 )}
@@ -342,7 +342,7 @@ export default function StationManagement() {
                         <button
                           onClick={() => handleOpenModal(item)}
                           className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
-                          title="Edit Station"
+                          title="Edit Lembaga"
                         >
                           <LuPencil className="size-4" />
                         </button>
@@ -351,7 +351,7 @@ export default function StationManagement() {
                         <button
                           onClick={() => handleDelete(item.lemb_id)}
                           className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
-                          title="Delete Station"
+                          title="Hapus Lembaga"
                         >
                           <LuTrash2 className="size-4" />
                         </button>
@@ -362,7 +362,7 @@ export default function StationManagement() {
               </div>
             ) : (
               <div className="py-14 text-center text-gray-400 dark:text-gray-500 text-sm">
-                No stations found.
+                Tidak ada lembaga ditemukan.
               </div>
             )}
           </div>
@@ -382,10 +382,10 @@ export default function StationManagement() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
-                  {editingId ? "Edit Station" : "Add New Station"}
+                  {editingId ? "Edit Lembaga" : "Tambah Lembaga Baru"}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {editingId ? "Update station details." : "Create a new station location."}
+                  {editingId ? "Perbarui detail lembaga." : "Buat lokasi lembaga baru."}
                 </p>
               </div>
             </div>
@@ -394,9 +394,9 @@ export default function StationManagement() {
           <div className="px-6 py-6 lg:px-8 lg:py-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
             <div className="space-y-4">
               <div>
-                <Label>Station Name / Location</Label>
+                <Label>Nama Lembaga / Lokasi</Label>
                 <Input
-                  placeholder="e.g. CGK (Jakarta)"
+                  placeholder="Contoh: Yayasan Pendidikan"
                   value={data.lemb_name}
                   onChange={(e) => setData("lemb_name", e.target.value)}
                   className="mt-1.5"
@@ -412,14 +412,14 @@ export default function StationManagement() {
               onClick={() => setIsModalOpen(false)}
               className="px-6 rounded-xl"
             >
-              Cancel
+              Batal
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={processing}
               className="px-8 rounded-xl shadow-lg shadow-brand-500/25"
             >
-              {processing ? "Saving..." : editingId ? "Update Station" : "Create Station"}
+              {processing ? "Menyimpan..." : editingId ? "Perbarui Lembaga" : "Buat Lembaga"}
             </Button>
           </div>
         </div>

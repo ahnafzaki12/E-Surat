@@ -21,7 +21,7 @@ export default function Login() {
     return (
         <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
             <div className="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900 sm:p-0">
-                
+
                 {/* Left Side: Login Form */}
                 <div className="flex flex-col flex-1">
                     <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
@@ -148,14 +148,14 @@ export default function Login() {
                         <div className="flex flex-col items-center max-w-xs">
                             <Link href="/" className="block mb-4">
                                 <img
-                                    width={231}
-                                    height={48}
-                                    src="/images/logo/auth-logo.svg"
+                                    className="h-24 w-auto mx-auto"
+                                    src="/images/logo/logo-mais-paiton.png"
                                     alt="Logo"
                                 />
                             </Link>
                             <p className="text-center text-gray-400 dark:text-white/60">
-                                Aplikasi Manajemen Surat dan Disposisi Digital E-Surat
+                                Aplikasi Manajemen Surat Digital<br />
+                                Pondok Pesantren Islamiyah Syafiiyah Paiton
                             </p>
                         </div>
                     </div>

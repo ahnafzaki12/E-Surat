@@ -19,9 +19,8 @@ export default function AuthLayout({
             <div className="flex flex-col items-center max-w-xs">
               <Link to="/" className="block mb-4">
                 <img
-                  width={231}
-                  height={48}
-                  src="/images/logo/auth-logo.svg"
+                  className="h-12 w-auto mx-auto"
+                  src="/images/logo/logo-mais-paiton.png"
                   alt="Logo"
                 />
               </Link>
